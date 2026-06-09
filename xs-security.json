@@ -1,0 +1,7 @@
+{
+  "xsappname": "Sepur_tours_management",
+  "tenant-mode": "dedicated",
+  "description": "Security profile of called application",
+  "scopes": [],
+  "role-templates": []
+}

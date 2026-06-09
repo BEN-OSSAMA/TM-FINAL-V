@@ -1,0 +1,14 @@
+<mvc:View
+    controllerName="sepur.home.controller.App"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m">
+
+    <App id="app">
+        <pages>
+            <mvc:XMLView
+                id="homeView"
+                viewName="sepur.home.view.home"/>
+        </pages>
+    </App>
+
+</mvc:View>

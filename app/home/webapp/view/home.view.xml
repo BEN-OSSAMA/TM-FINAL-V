@@ -1,0 +1,95 @@
+<mvc:View
+    controllerName="sepur.home.controller.home"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+    <Page showHeader="false" class="homePage">
+        <content>
+            <VBox width="100%">
+
+                <Toolbar class="homeTopBar">
+                    <Button icon="sap-icon://menu2" type="Transparent"/>
+
+                    <Image
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/1280px-SAP_2011_logo.svg.png"
+                        class="sapLogo"/>
+
+                    <MenuButton
+                        text="{home>/title}"
+                        type="Transparent"
+                        class="homeTitleButton">
+                        <menu>
+                            <Menu>
+                                <MenuItem text="Dashboard Superviseur" icon="sap-icon://business-objects-experience"/>
+                                <MenuItem text="Tournées à valider" icon="sap-icon://map"/>
+                                <MenuItem text="Roadmaps à valider" icon="sap-icon://journey-arrive"/>
+                                <MenuItem text="Analytics and Reporting" icon="sap-icon://business-objects-explorer"/>
+                                <MenuItem text="Settings and Configuration" icon="sap-icon://action-settings"/>
+                            </Menu>
+                        </menu>
+                    </MenuButton>
+
+                    <ToolbarSpacer/>
+
+                    <Button text="{home>/roleLabel}" type="Emphasized"/>
+                    <Button icon="sap-icon://bell" type="Transparent"/>
+                    <Button icon="sap-icon://person-placeholder" type="Transparent"/>
+                    <Button icon="sap-icon://log" type="Transparent" press=".onLogout"/>
+                </Toolbar>
+
+                <VBox class="heroSection">
+                    <items>
+                        <Text text="Welcome to SEPUR Tours Management" class="heroTitle"/>
+                    </items>
+                </VBox>
+
+                <VBox class="homeContent">
+                    <items>
+                        <HBox class="welcomePanel" justifyContent="SpaceBetween" alignItems="Center">
+                            <items>
+                                <VBox>
+                                    <items>
+                                        <Text text="ESPACE CENTRALISÉ" class="sectionLabel"/>
+                                        <Title text="{home>/welcomeTitle}" level="H2"/>
+                                        <Text text="{home>/welcomeSubtitle}" class="welcomeSubtitle"/>
+                                    </items>
+                                </VBox>
+
+                                <Avatar initials="{home>/initials}" displaySize="L"/>
+                            </items>
+                        </HBox>
+
+                        <FlexBox
+                            class="tileContainer"
+                            wrap="Wrap"
+                            items="{home>/tiles}">
+
+                            <items>
+                                <GenericTile
+                                    class="homeTile"
+                                    header="{home>title}"
+                                    subheader="{home>subTitle}"
+                                    press=".onTilePress">
+
+                                    <customData>
+                                        <core:CustomData key="target" value="{home>target}"/>
+                                    </customData>
+
+                                    <tileContent>
+                                        <TileContent>
+                                            <content>
+                                                <ImageContent src="{home>icon}"/>
+                                            </content>
+                                        </TileContent>
+                                    </tileContent>
+                                </GenericTile>
+                            </items>
+                        </FlexBox>
+                    </items>
+                </VBox>
+
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

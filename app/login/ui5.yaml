@@ -1,0 +1,4 @@
+specVersion: "4.0"
+metadata:
+  name: sepur.login
+type: application

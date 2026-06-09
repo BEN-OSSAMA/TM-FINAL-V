@@ -1,0 +1,180 @@
+{
+  "_version": "1.85.0",
+  "sap.app": {
+    "id": "sepur.supervisor.supervisordashboardfiori",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:ovp",
+      "version": "1.25.0",
+      "toolsId": "81518ec9-b64b-40f1-a05d-df22bfd0ca8a"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/route-management/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.148.1",
+      "libs": {
+  "sap.m": {},
+  "sap.ui.core": {},
+  "sap.fe.templates": {},
+  "sap.ovp": {},
+  "sap.ui.rta": {},
+  "sap.ui.layout": {},
+  "sap.viz": {}
+}
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "sepur.supervisor.supervisordashboardfiori.i18n.i18n"
+        }
+      },
+      "mainModel": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [],
+      "targets": {}
+    }
+  },
+  "sap.ovp": {
+    "globalFilterModel": "mainModel",
+    "globalFilterEntitySet": "Tours",
+    "containerLayout": "resizable",
+    "enableLiveFilter": true,
+    "considerAnalyticalParameters": false,
+    "globalFilterControlType": "MacroFilterBar",
+    "cards": {
+  "cardTourStatusChart": {
+  "model": "mainModel",
+  "template": "sap.ovp.cards.v4.charts.analytical",
+  "settings": {
+    "title": "Statistiques des tournées",
+    "subTitle": "Répartition par statut",
+    "entitySet": "TourStatusAnalytics",
+    "selectionAnnotationPath": "com.sap.vocabularies.UI.v1.SelectionVariant#TourStatusSV",
+    "chartAnnotationPath": "com.sap.vocabularies.UI.v1.Chart#TourStatusChart",
+    "presentationAnnotationPath": "com.sap.vocabularies.UI.v1.PresentationVariant#TourStatusPV",
+    "dataPointAnnotationPath": "com.sap.vocabularies.UI.v1.DataPoint#TourStatusDP",
+    "identificationAnnotationPath": "com.sap.vocabularies.UI.v1.Identification",
+    "showRefresh": true,
+    "defaultSpan": {
+      "rows": 8,
+      "cols": 1
+    }
+  }
+},
+"cardRoadmapStatusChart": {
+  "model": "mainModel",
+  "template": "sap.ovp.cards.v4.charts.analytical",
+  "settings": {
+    "title": "Statistiques des roadmaps",
+    "subTitle": "Répartition par statut",
+    "entitySet": "RoadmapStatusAnalytics",
+    "selectionAnnotationPath": "com.sap.vocabularies.UI.v1.SelectionVariant#RoadmapStatusSV",
+    "chartAnnotationPath": "com.sap.vocabularies.UI.v1.Chart#RoadmapStatusChart",
+    "presentationAnnotationPath": "com.sap.vocabularies.UI.v1.PresentationVariant#RoadmapStatusPV",
+    "dataPointAnnotationPath": "com.sap.vocabularies.UI.v1.DataPoint#RoadmapStatusDP",
+    "identificationAnnotationPath": "com.sap.vocabularies.UI.v1.Identification",
+    "showRefresh": true,
+    "defaultSpan": {
+      "rows": 8,
+      "cols": 1
+    }
+  }
+},
+  "cardTours": {
+    "model": "mainModel",
+    "template": "sap.ovp.cards.v4.table",
+    "settings": {
+      "title": "Tournées de collecte",
+      "subTitle": "Dernières tournées créées, validées ou rejetées",
+      "entitySet": "Tours",
+      "annotationPath": "com.sap.vocabularies.UI.v1.LineItem#DashboardTours",
+      "showRefresh": true,
+      "defaultSpan": {
+        "rows": 8,
+        "cols": 2
+      }
+    }
+  },
+  "cardRoadmaps": {
+    "model": "mainModel",
+    "template": "sap.ovp.cards.v4.table",
+    "settings": {
+      "title": "Roadmaps",
+      "subTitle": "Roadmaps générées à partir des tournées validées",
+      "entitySet": "Roadmaps",
+      "annotationPath": "com.sap.vocabularies.UI.v1.LineItem#DashboardRoadmaps",
+      "showRefresh": true,
+      "defaultSpan": {
+        "rows": 8,
+        "cols": 2
+      }
+    }
+  }
+},
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "analytical"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    }
+  }
+}
+}

@@ -1,0 +1,52 @@
+{
+  "_version": "1.49.0",
+  "sap.app": {
+    "id": "sepur.login",
+    "type": "application",
+    "title": "Connexion SEPUR",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {}
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "rootView": {
+      "viewName": "sepur.login.view.Login",
+      "type": "XML",
+      "id": "loginView",
+      "async": true
+    },
+    "models": {
+      "": {
+        "type": "sap.ui.model.odata.v4.ODataModel",
+        "settings": {
+          "serviceUrl": "/odata/v4/route-management/",
+          "synchronizationMode": "None",
+          "operationMode": "Server",
+          "autoExpandSelect": true
+        }
+      }
+    }
+  }
+}

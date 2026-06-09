@@ -1,0 +1,34 @@
+<mvc:View
+    controllerName="sepur.supervisor.supervisordashboardfiori.ext.controller.TourStatusChartCard"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds">
+
+    <VBox width="100%" height="100%" class="sapUiSmallMargin">
+        <viz:VizFrame
+            id="tourStatusChart"
+            width="100%"
+            height="300px"
+            vizType="column"
+            uiConfig="{applicationSet:'fiori'}">
+
+            <viz:dataset>
+                <viz.data:FlattenedDataset data="{chart>/items}">
+                    <viz.data:dimensions>
+                        <viz.data:DimensionDefinition name="Statut" value="{chart>status}"/>
+                    </viz.data:dimensions>
+                    <viz.data:measures>
+                        <viz.data:MeasureDefinition name="Total" value="{chart>total}"/>
+                    </viz.data:measures>
+                </viz.data:FlattenedDataset>
+            </viz:dataset>
+
+            <viz:feeds>
+                <viz.feeds:FeedItem uid="categoryAxis" type="Dimension" values="Statut"/>
+                <viz.feeds:FeedItem uid="valueAxis" type="Measure" values="Total"/>
+            </viz:feeds>
+        </viz:VizFrame>
+    </VBox>
+</mvc:View>

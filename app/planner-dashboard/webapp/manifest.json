@@ -1,0 +1,70 @@
+{
+  "_version": "1.49.0",
+  "sap.app": {
+    "id": "sepur.planner",
+    "type": "application",
+    "title": "Dashboard Planificateur",
+    "description": "Tableau de bord du planificateur pour le suivi des tournées et des roadmaps",
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
+    "dataSources": {
+      "RouteManagementService": {
+        "uri": "/odata/v4/route-management/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.layout": {},
+        "sap.viz": {},
+        "sap.f": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "rootView": {
+      "viewName": "sepur.planner.view.Dashboard",
+      "type": "XML",
+      "id": "dashboardView",
+      "async": true
+    },
+    "models": {
+      "": {
+        "type": "sap.ui.model.odata.v4.ODataModel",
+        "dataSource": "RouteManagementService",
+        "settings": {
+          "synchronizationMode": "None",
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      }
+    }
+  }
+}

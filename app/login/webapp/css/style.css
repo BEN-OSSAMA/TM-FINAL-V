@@ -1,0 +1,200 @@
+.loginPage {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(10, 110, 209, 0.10), transparent 34rem),
+        linear-gradient(180deg, #f5f8fb 0%, #edf3f8 100%);
+}
+
+.loginShell {
+    min-height: 100vh;
+    width: 100%;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.loginCard {
+    width: 29rem;
+    max-width: 94vw;
+    background: #ffffff;
+    border-radius: 1.125rem;
+    border: 1px solid #dfe7ef;
+    box-shadow:
+        0 1.25rem 3rem rgba(15, 23, 42, 0.12),
+        0 0.25rem 0.75rem rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+}
+
+.loginHeader {
+    padding: 2.45rem 2.4rem 1.2rem 2.4rem;
+}
+
+.sapLogoImage {
+    width: 5.7rem;
+    height: auto;
+    margin-bottom: 1.35rem;
+    filter: drop-shadow(0 0.5rem 0.9rem rgba(10, 110, 209, 0.18));
+}
+
+.loginTitle {
+    color: #0b1f3a;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.015rem;
+    margin-bottom: 0.35rem;
+}
+
+.loginSubtitle {
+    color: #556b82;
+    font-size: 0.93rem;
+    line-height: 1.45;
+}
+
+.loginForm {
+    padding: 1.15rem 2.4rem 2.15rem 2.4rem;
+}
+
+.loginLabel {
+    color: #5b6b7d !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.15rem !important;
+}
+
+.passwordLabel {
+    margin-top: 0.8rem !important;
+}
+
+.loginInput {
+    margin-bottom: 0.2rem;
+}
+
+.sapStyleInput .sapMInputBaseContentWrapper {
+    height: 2.25rem !important;
+    border: none !important;
+    border-bottom: 2px solid #5b6b7d !important;
+    border-radius: 0 !important;
+    background: #f7f9fb !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.sapStyleInput .sapMInputBaseContentWrapper:hover {
+    border-bottom-color: #0a6ed1 !important;
+    background: #f4f7fa !important;
+}
+
+.sapStyleInput.sapMFocus .sapMInputBaseContentWrapper,
+.sapStyleInput .sapMInputBaseContentWrapper.sapMInputBaseContentWrapperFocused {
+    border-bottom-color: #0a6ed1 !important;
+    background: #f4f7fa !important;
+    box-shadow: none !important;
+}
+
+.sapStyleInput input {
+    height: 2.25rem !important;
+    line-height: 2.25rem !important;
+    font-size: 0.86rem !important;
+    color: #223548 !important;
+    padding: 0 0.45rem !important;
+    background: transparent !important;
+}
+
+.sapStyleInput input::placeholder {
+    color: #5b6b7d !important;
+    font-style: normal !important;
+}
+
+.passwordInput .sapMInputBaseContentWrapper {
+    padding-right: 0.3rem !important;
+}
+
+.passwordInput .sapMInputBaseIcon {
+    color: #5b6b7d !important;
+    font-size: 1rem !important;
+}
+
+.passwordInput .sapMInputBaseIcon:hover {
+    color: #0a6ed1 !important;
+}
+
+.loginOptions {
+    margin-top: 0.55rem !important;
+    margin-bottom: 1.45rem !important;
+}
+
+.rememberCheck {
+    margin-left: -0.2rem;
+}
+
+.rememberCheck .sapMCbBg {
+    border-radius: 0.12rem !important;
+    border-color: #5b6b7d !important;
+}
+
+.rememberCheck .sapMCbLabel {
+    color: #5b6b7d !important;
+    font-size: 0.78rem !important;
+}
+
+.forgotLink {
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    color: #0a6ed1 !important;
+}
+
+.loginButton {
+    height: 2.9rem;
+    border-radius: 0.55rem;
+}
+
+.loginButton .sapMBtnInner {
+    height: 2.9rem;
+    border-radius: 0.55rem;
+    background: linear-gradient(180deg, #0a7be7 0%, #0064c8 100%);
+    border-color: #0064c8;
+    font-weight: 800;
+    font-size: 0.94rem;
+    box-shadow: 0 0.5rem 1.1rem rgba(10, 110, 209, 0.23);
+}
+
+.loginButton .sapMBtnInner:hover {
+    background: linear-gradient(180deg, #0b83f4 0%, #005bb8 100%);
+}
+
+.loginFooter {
+    padding: 1.05rem 2rem;
+    background: #f8fafc;
+    border-top: 1px solid #e8eef5;
+}
+
+.footerText {
+    color: #708195;
+    font-size: 0.82rem;
+}
+
+.sapMMessageStrip {
+    border-radius: 0.55rem;
+}
+
+@media (max-width: 600px) {
+    .loginShell {
+        padding: 1rem;
+    }
+
+    .loginCard {
+        width: 100%;
+        border-radius: 0.9rem;
+    }
+
+    .loginHeader {
+        padding: 2.2rem 1.5rem 1rem 1.5rem;
+    }
+
+    .loginForm {
+        padding: 1rem 1.5rem 2rem 1.5rem;
+    }
+
+    .sapLogoImage {
+        width: 5rem;
+    }
+}

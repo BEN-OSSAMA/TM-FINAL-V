@@ -1,0 +1,6 @@
+{
+  "name": "planner-dashboard",
+  "version": "0.0.1",
+  "description": "Dashboard Planificateur SEPUR",
+  "main": "webapp/index.html"
+}

@@ -1,0 +1,151 @@
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    controllerName="sepur.planner.controller.Dashboard"
+    displayBlock="true">
+
+    <App id="dashboardApp">
+        <Page showHeader="false" class="plannerPage">
+            <content>
+
+                <HBox id="layoutRoot" class="layoutRoot">
+
+                    <!-- SIDEBAR FIXE -->
+                    <VBox id="sidebar" class="sideNav">
+
+                        <VBox class="brandArea" alignItems="Center">
+                            <Image
+                                src="https://www.sepur.com/wp-content/uploads/2025/01/logo-sepur-insertion-e1736954850722.png"
+                                class="sepurLogo"
+                                decorative="false"
+                                alt="SEPUR" />
+                        </VBox>
+
+                        <VBox class="menuArea">
+                            <Button
+                                id="btnMenuDashboard"
+                                text="Dashboard"
+                                icon="sap-icon://business-objects-experience"
+                                class="menuButton activeMenu"
+                                press=".onNavigateSection">
+                                <customData>
+                                    <core:CustomData key="section" value="dashboard" writeToDom="false" />
+                                </customData>
+                            </Button>
+
+                            <Button
+                                id="btnMenuTours"
+                                text="Tournées"
+                                icon="sap-icon://map"
+                                class="menuButton"
+                                press=".onNavigateSection">
+                                <customData>
+                                    <core:CustomData key="section" value="tours" writeToDom="false" />
+                                </customData>
+                            </Button>
+
+                            <Button
+                                id="btnMenuRoadmaps"
+                                text="Roadmaps"
+                                icon="sap-icon://journey-arrive"
+                                class="menuButton"
+                                press=".onNavigateSection">
+                                <customData>
+                                    <core:CustomData key="section" value="roadmaps" writeToDom="false" />
+                                </customData>
+                            </Button>
+
+                            <Button
+                                id="btnMenuRejectedTours"
+                                text="Tournées rejetées"
+                                icon="sap-icon://decline"
+                                class="menuButton"
+                                press=".onNavigateSection">
+                                <customData>
+                                    <core:CustomData key="section" value="rejectedTours" writeToDom="false" />
+                                </customData>
+                            </Button>
+
+                            <Button
+                                text="Accueil"
+                                icon="sap-icon://grid"
+                                class="menuButton"
+                                press=".onOpenHome" />
+                        </VBox>
+
+                        <VBox class="bottomArea">
+                            <Button
+                                text="Actualiser"
+                                icon="sap-icon://refresh"
+                                class="menuButton"
+                                press=".onRefresh" />
+
+                            <Button
+                                text="Déconnexion"
+                                icon="sap-icon://log"
+                                class="menuButton logoutButton"
+                                press=".onLogout" />
+                        </VBox>
+
+                    </VBox>
+
+                    <!-- MAIN AREA -->
+                    <VBox id="mainContent" class="mainArea" busy="{/busy}" busyIndicatorDelay="0">
+
+                        <!-- HEADER FIXE -->
+                        <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center">
+
+                            <HBox alignItems="Center" class="headerBrand">
+                                <VBox>
+                                    <Title text="Espace Planificateur" level="H2" class="topTitle" />
+                                    <Text text="Suivi des tournées, roadmaps, validations et rejets" class="topSubtitle" />
+                                </VBox>
+                            </HBox>
+
+                            <HBox alignItems="Center" class="topActions">
+
+                                <Button
+                                    id="btnPlannerNotifications"
+                                    icon="sap-icon://bell"
+                                    text="{/notifications/unreadCount}"
+                                    tooltip="Notifications"
+                                    press=".onOpenNotifications"
+                                    class="notificationButton sapUiSmallMarginBegin" />
+
+                                <Button
+                                    icon="sap-icon://refresh"
+                                    type="Default"
+                                    tooltip="Actualiser les données"
+                                    press=".onRefresh"
+                                    class="refreshButton sapUiSmallMarginBegin" />
+
+                                <Avatar
+                                    initials="{/userInitials}"
+                                    displaySize="S"
+                                    backgroundColor="Accent6"
+                                    class="topAvatar" />
+                            </HBox>
+
+                        </HBox>
+
+                        <!-- BODY SCROLLABLE — contenu dynamique -->
+                        <ScrollContainer
+                            id="mainScroll"
+                            class="dashboardScroll"
+                            vertical="true"
+                            horizontal="false"
+                            height="100%">
+
+                            <VBox id="dynamicContent" class="dynamicContentArea dashboardBody" />
+
+                        </ScrollContainer>
+
+                    </VBox>
+
+                </HBox>
+
+            </content>
+        </Page>
+    </App>
+</mvc:View>

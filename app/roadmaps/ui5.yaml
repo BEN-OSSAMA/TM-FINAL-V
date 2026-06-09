@@ -1,0 +1,14 @@
+specVersion: "4.0"
+metadata:
+  name: ns.roadmaps
+type: application
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://sapui5.hana.ondemand.com

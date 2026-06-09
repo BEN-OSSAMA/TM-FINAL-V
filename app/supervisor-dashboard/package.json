@@ -1,0 +1,6 @@
+{
+  "name": "supervisor-dashboard",
+  "version": "0.0.1",
+  "description": "Dashboard Superviseur SEPUR",
+  "main": "webapp/index.html"
+}

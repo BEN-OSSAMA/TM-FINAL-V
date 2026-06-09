@@ -1,0 +1,155 @@
+using RouteManagementService as service from '../../srv/route-management-service';
+
+annotate service.Tours with @(
+    UI.HeaderInfo: {
+        TypeName: 'Tournée',
+        TypeNamePlural: 'Tournées de collecte',
+        Title: {
+            $Type: 'UI.DataField',
+            Value: tourCode
+        },
+        Description: {
+            $Type: 'UI.DataField',
+            Value: status
+        }
+    },
+
+    UI.SelectionFields: [
+        tourCode,
+        tourDate,
+        zone,
+        collectionType,
+        status
+    ],
+
+    UI.LineItem: [
+        {
+            $Type: 'UI.DataField',
+            Label: 'N° tournée',
+            Value: tourCode
+        },
+        {
+            $Type: 'UI.DataField',
+            Label: 'Date de collecte',
+            Value: tourDate
+        },
+        {
+            $Type: 'UI.DataField',
+            Label: 'Zone',
+            Value: zone
+        },
+        {
+            $Type: 'UI.DataField',
+            Label: 'Type collecte',
+            Value: collectionType
+        },
+        {
+            $Type: 'UI.DataField',
+            Label: 'Statut',
+            Value: status
+        }
+    ],
+
+    UI.Facets: [
+        {
+            $Type: 'UI.ReferenceFacet',
+            Label: 'Informations générales',
+            Target: '@UI.FieldGroup#General'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            Label: 'Client et affectation',
+            Target: '@UI.FieldGroup#Client'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            Label: 'Ressources',
+            Target: '@UI.FieldGroup#Resources'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            Label: 'Suivi de la tournée',
+            Target: '@UI.FieldGroup#Tracking'
+        }
+    ],
+
+    UI.FieldGroup #General: {
+        Data: [
+            {
+                $Type: 'UI.DataField',
+                Label: 'N° tournée',
+                Value: tourCode
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Date de collecte',
+                Value: tourDate
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Zone',
+                Value: zone
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Type collecte',
+                Value: collectionType
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Statut',
+                Value: status
+            }
+        ]
+    },
+
+    UI.FieldGroup #Client: {
+        Data: [
+            {
+                $Type: 'UI.DataField',
+                Label: 'Client',
+                Value: client_ID
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Description',
+                Value: description
+            }
+        ]
+    },
+
+    UI.FieldGroup #Resources: {
+        Data: [
+            {
+                $Type: 'UI.DataField',
+                Label: 'Véhicule',
+                Value: vehicle_ID
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Chauffeur',
+                Value: driver_ID
+            }
+        ]
+    },
+
+    UI.FieldGroup #Tracking: {
+        Data: [
+            {
+                $Type: 'UI.DataField',
+                Label: 'Motif de refus',
+                Value: rejectionReason
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Créé le',
+                Value: createdAt
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Mis à jour le',
+                Value: updatedAt
+            }
+        ]
+    }
+);

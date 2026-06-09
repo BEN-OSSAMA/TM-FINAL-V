@@ -1,0 +1,160 @@
+{
+  "_version": "1.85.0",
+  "sap.app": {
+    "id": "sepur.supervisor.supervisortours",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/route-management/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.148.1",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "sepur.supervisor.supervisortours.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true,
+          "synchronizationMode": "None"
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "SupervisorToursList",
+          "target": "SupervisorToursList"
+        },
+        {
+          "pattern": "Tours({key}):?query:",
+          "name": "SupervisorToursObjectPage",
+          "target": "SupervisorToursObjectPage"
+        }
+      ],
+      "targets": {
+        "SupervisorToursList": {
+          "type": "Component",
+          "id": "SupervisorToursList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Tours",
+              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "creationMode": {
+                "name": "Disabled"
+              },
+              "navigation": {
+                "Tours": {
+                  "detail": {
+                    "route": "SupervisorToursObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "None",
+                    "selectAll": false,
+                    "enableExport": true,
+                    "personalization": {
+                      "column": true,
+                      "sort": true,
+                      "filter": true,
+                      "group": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "SupervisorToursObjectPage": {
+          "type": "Component",
+          "id": "SupervisorToursObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Tours",
+              "editableHeaderContent": false,
+              "showRelatedApps": false,
+              "sectionLayout": "Page"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    },
+    "macros": {
+      "table": {}
+    }
+  }
+}
