@@ -7,8 +7,19 @@ sap.ui.define([
 
   return Controller.extend("sepur.home.controller.home", {
     onInit: function () {
-      const role = sessionStorage.getItem("role") || "SUPERVISEUR";
-      const fullName = sessionStorage.getItem("fullName") || "Superviseur SEPUR";
+      const sUser = localStorage.getItem("sepur.user");
+      let role = "SUPERVISEUR";
+      let fullName = "Utilisateur SEPUR";
+
+      if (sUser) {
+        try {
+          const oUser = JSON.parse(sUser);
+          role = oUser.role || role;
+          fullName = oUser.fullName || fullName;
+        } catch (e) {
+          // ignore invalid local storage payload
+        }
+      }
 
       const isSupervisor = role === "SUPERVISEUR";
       const isPlanner = role === "PLANIFICATEUR";
@@ -22,24 +33,6 @@ sap.ui.define([
             subTitle: "Vue globale et statistiques",
             icon: "sap-icon://business-objects-experience",
             target: "/supervisor-dashboard/webapp/index.html"
-          },
-          {
-            title: "Tournées à valider",
-            subTitle: "Validation ou rejet des tournées",
-            icon: "sap-icon://map",
-            target: "/supervisor-tours/webapp/index.html"
-          },
-          {
-            title: "Roadmaps à valider",
-            subTitle: "Contrôle des roadmaps",
-            icon: "sap-icon://journey-arrive",
-            target: "/supervisor-roadmaps/webapp/index.html"
-          },
-          {
-            title: "Analytics and Reporting",
-            subTitle: "Dashboard Fiori Overview",
-            icon: "sap-icon://business-objects-explorer",
-            target: "/supervisor-dashboard-fiori/webapp/index.html"
           }
         );
       }
@@ -48,21 +41,9 @@ sap.ui.define([
         tiles.push(
           {
             title: "Dashboard Planificateur",
-            subTitle: "Suivi des tournées",
+            subTitle: "Suivi des tournées et roadmaps",
             icon: "sap-icon://manager-insight",
             target: "/planner-dashboard/webapp/index.html"
-          },
-          {
-            title: "Création des tournées",
-            subTitle: "Créer et modifier les tournées",
-            icon: "sap-icon://add-activity",
-            target: "/tours/webapp/index.html"
-          },
-          {
-            title: "Roadmaps",
-            subTitle: "Consultation des roadmaps",
-            icon: "sap-icon://route",
-            target: "/roadmaps/webapp/index.html"
           }
         );
       }
@@ -108,6 +89,7 @@ sap.ui.define([
     },
 
     onLogout: function () {
+      localStorage.removeItem("sepur.user");
       sessionStorage.clear();
       window.location.href = "/login/webapp/index.html";
     }

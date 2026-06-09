@@ -1,0 +1,31 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <VBox class="sectionContainer">
+        <HBox class="sectionHeaderBar" justifyContent="SpaceBetween" alignItems="Center">
+            <VBox>
+                <Title text="Roadmaps validées — préparation CPI" level="H3" class="sectionTitle" />
+                <Text text="Suivi du statut d'intégration (CPI à venir)" class="sectionSubtitle" />
+            </VBox>
+            <Button text="Actualiser" icon="sap-icon://refresh" press=".onRefreshIntegrationSection" />
+        </HBox>
+        <Table class="sectionTable" items="{view>/integrationSection/items}" growing="true" noDataText="Aucune roadmap validée">
+            <columns>
+                <Column><Text text="N° roadmap" /></Column>
+                <Column><Text text="Client" /></Column>
+                <Column><Text text="Mois/Année" /></Column>
+                <Column><Text text="Statut intégration" /></Column>
+                <Column><Text text="N° commande SAP" /></Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{view>roadmapCode}" />
+                        <Text text="{view>clientName}" />
+                        <Text text="{view>month}/{view>year}" />
+                        <ObjectStatus text="{view>integrationStatus}" state="{= ${view>integrationStatus} === 'INTEGRATED' ? 'Success' : 'Warning' }" />
+                        <Text text="{view>sapSalesOrderNumber}" />
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+    </VBox>
+</core:FragmentDefinition>

@@ -148,21 +148,29 @@ entity TourCollectionPoints : cuid {
 /* ===================================================== */
 
 entity Roadmaps : cuid, managed {
-    roadmapCode     : String(30);
-    status          : String(20) default 'CREATED';
-    startDate       : Date;
-    endDate         : Date;
-    rejectionReason : LargeString;
+    roadmapCode         : String(30);
+    status              : String(20) default 'CREATED';
+    startDate           : Date;
+    endDate             : Date;
+    month               : Integer;
+    year                : Integer;
+    rejectionReason     : LargeString;
+    integrationStatus   : String(30) default 'NOT_INTEGRATED';
+    sapSalesOrderNumber : String(30);
 
-    updatedAt       : Timestamp @cds.on.insert: $now @cds.on.update: $now;
+    updatedAt           : Timestamp @cds.on.insert: $now @cds.on.update: $now;
 
-    tour : Association to Tours;
+    client : Association to Clients;
+    tour   : Association to Tours;
 
     assignedTours : Composition of many RoadmapTours
         on assignedTours.roadmap = $self;
 
     steps : Composition of many RoadmapSteps
         on steps.roadmap = $self;
+
+    decisions : Composition of many DecisionHistories
+        on decisions.roadmap = $self;
 }
 
 entity RoadmapTours : cuid, managed {
@@ -191,9 +199,11 @@ entity DecisionHistories : cuid, managed {
     decision     : String(20);
     reason       : LargeString;
     decisionDate : Timestamp @cds.on.insert: $now;
+    entityType   : String(20);
 
     decidedBy : Association to Users;
     tour      : Association to Tours;
+    roadmap   : Association to Roadmaps;
 }
 
 /* ===================================================== */

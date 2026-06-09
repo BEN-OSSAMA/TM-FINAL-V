@@ -1,4 +1,5 @@
 const cds = require('@sap/cds');
+const registerLoginHandler = require('./handlers/login-handler');
 
 const TOUR_STATUS = {
   CREATED: 'CREATED',
@@ -78,10 +79,8 @@ function isRejectedRoadmapStatus(status) {
 
 const DELETABLE_TOUR_STATUSES = new Set([
   'DRAFT',
-  'PENDING',
   'CREATED',
-  'REJECTED',
-  'CANCELLED'
+  'REJECTED'
 ]);
 
 function validateTourMandatoryFields(req, data) {
@@ -114,9 +113,158 @@ function validateTourMandatoryFields(req, data) {
   return null;
 }
 
-/* ===================================================== */
-/* CODE GENERATOR                                        */
-/* ===================================================== */
+function monthYearFromDate(dateValue) {
+  if (!dateValue) {
+    return { month: null, year: null };
+  }
+
+  const value = String(dateValue).slice(0, 10);
+  const parts = value.split('-');
+
+  return {
+    month: Number(parts[1]),
+    year: Number(parts[0])
+  };
+}
+
+function monthRange(month, year) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  return { startDate, endDate };
+}
+
+function isDateInMonthYear(dateValue, month, year) {
+  const parsed = monthYearFromDate(dateValue);
+
+  return parsed.month === Number(month) && parsed.year === Number(year);
+}
+
+async function tourInValidatedRoadmap(tourID, entities, excludeRoadmapID) {
+  const { RoadmapTours, Roadmaps } = entities;
+  const assignments = await SELECT.from(RoadmapTours).where({ tour_ID: tourID });
+
+  for (const assignment of assignments) {
+    const roadmap = await SELECT.one.from(Roadmaps).where({ ID: assignment.roadmap_ID });
+
+    if (!roadmap) {
+      continue;
+    }
+
+    if (excludeRoadmapID && roadmap.ID === excludeRoadmapID) {
+      continue;
+    }
+
+    if (isValidatedRoadmapStatus(roadmap.status)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function replaceTourResources(tourID, humanResourceIDs, materialResourceIDs, entities) {
+  const { TourHumanResources, TourMaterialResources } = entities;
+
+  await DELETE.from(TourHumanResources).where({ tour_ID: tourID });
+  await DELETE.from(TourMaterialResources).where({ tour_ID: tourID });
+
+  let sequence = 1;
+
+  for (const humanResourceID of humanResourceIDs || []) {
+    await INSERT.into(TourHumanResources).entries({
+      ID: cds.utils.uuid(),
+      tour_ID: tourID,
+      humanResource_ID: humanResourceID,
+      sequence: sequence++
+    });
+  }
+
+  sequence = 1;
+
+  for (const materialResourceID of materialResourceIDs || []) {
+    await INSERT.into(TourMaterialResources).entries({
+      ID: cds.utils.uuid(),
+      tour_ID: tourID,
+      materialResource_ID: materialResourceID,
+      sequence: sequence++
+    });
+  }
+}
+
+async function validateRoadmapBusinessRules(req, roadmapID, entities) {
+  const { Roadmaps, RoadmapTours, Tours } = entities;
+  const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadmapID });
+
+  if (!roadmap) {
+    return reject(req, 'Roadmap introuvable.');
+  }
+
+  if (!roadmap.client_ID) {
+    return reject(req, 'Le client est obligatoire pour la roadmap.');
+  }
+
+  if (!roadmap.month || !roadmap.year) {
+    return reject(req, 'Le mois et l\'année sont obligatoires pour la roadmap.');
+  }
+
+  const assignments = await SELECT.from(RoadmapTours).where({ roadmap_ID: roadmapID });
+
+  if (!assignments.length) {
+    return reject(req, 'La roadmap doit contenir au moins une tournée.');
+  }
+
+  for (const assignment of assignments) {
+    const tour = await SELECT.one.from(Tours).where({ ID: assignment.tour_ID });
+
+    if (!tour) {
+      return reject(req, 'Une tournée affectée est introuvable.');
+    }
+
+    if (!isValidatedStatus(tour.status)) {
+      return reject(req, `La tournée ${tour.tourCode || tour.ID} n'est pas validée.`);
+    }
+
+    if (tour.client_ID !== roadmap.client_ID) {
+      return reject(req, 'Toutes les tournées doivent appartenir au même client que la roadmap.');
+    }
+
+    if (!isDateInMonthYear(tour.tourDate, roadmap.month, roadmap.year)) {
+      return reject(req, `La tournée ${tour.tourCode || tour.ID} n'est pas dans le mois sélectionné.`);
+    }
+
+    if (await tourInValidatedRoadmap(tour.ID, entities, roadmapID)) {
+      return reject(req, `La tournée ${tour.tourCode || tour.ID} appartient déjà à une roadmap validée.`);
+    }
+  }
+
+  return null;
+}
+
+async function getEligibleToursForRoadMapInternal(clientID, month, year, entities) {
+  const { Tours } = entities;
+  const tours = await SELECT.from(Tours).where({ client_ID: clientID });
+  const eligible = [];
+
+  for (const tour of tours) {
+    if (!isValidatedStatus(tour.status)) {
+      continue;
+    }
+
+    if (!isDateInMonthYear(tour.tourDate, month, year)) {
+      continue;
+    }
+
+    if (await tourInValidatedRoadmap(tour.ID, entities)) {
+      continue;
+    }
+
+    eligible.push(tour);
+  }
+
+  return eligible;
+}
 
 async function nextCode(entityName, fieldName, prefix) {
   const entities = cds.entities('route.management');
@@ -243,43 +391,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* AUTHENTICATION                                        */
     /* ===================================================== */
 
-    this.on('login', async (req) => {
-      const email = req.data.email || req.data.username;
-      const { password } = req.data;
-
-      if (!email || !password) {
-        return reject(req, 'E-mail et mot de passe requis.');
-      }
-
-      let user = await SELECT.one.from(Users).where({
-        email,
-        password
-      });
-
-      if (!user) {
-        user = await SELECT.one.from(Users).where({
-          username: email,
-          password
-        });
-      }
-
-      if (!user) {
-        return reject(req, 'Identifiants incorrects.', 401);
-      }
-
-      if (!user.active) {
-        return reject(req, 'Utilisateur inactif.', 403);
-      }
-
-      return {
-        ID: user.ID,
-        email: user.email,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-        active: user.active
-      };
-    });
+    registerLoginHandler(this, { Users }, { reject });
 
     /* ===================================================== */
     /* TOURS — BEFORE CREATE / UPDATE                        */
@@ -503,8 +615,14 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         'roadmapCode',
         'startDate',
         'endDate',
+        'month',
+        'year',
         'status',
         'rejectionReason',
+        'integrationStatus',
+        'sapSalesOrderNumber',
+        'client_ID',
+        'client',
         'tour_ID',
         'tour',
         'updatedAt'
@@ -544,20 +662,52 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* ===================================================== */
 
     this.before('CREATE', 'RoadmapTours', async (req) => {
+      const roadmapID = req.data.roadmap_ID;
+      const tourID = req.data.tour_ID;
+
+      if (!roadmapID || !tourID) {
+        return reject(req, 'La roadmap et la tournée sont obligatoires.');
+      }
+
+      const [roadmap, tour] = await Promise.all([
+        SELECT.one.from(Roadmaps).where({ ID: roadmapID }),
+        SELECT.one.from(Tours).where({ ID: tourID })
+      ]);
+
+      if (!roadmap) {
+        return reject(req, 'Roadmap introuvable.');
+      }
+
+      if (!tour) {
+        return reject(req, 'Tournée introuvable.');
+      }
+
+      if (!isValidatedStatus(tour.status)) {
+        return reject(req, 'Seules les tournées validées peuvent être affectées à une roadmap.');
+      }
+
+      if (roadmap.client_ID && tour.client_ID !== roadmap.client_ID) {
+        return reject(req, 'La tournée doit appartenir au même client que la roadmap.');
+      }
+
+      if (roadmap.month && roadmap.year && !isDateInMonthYear(tour.tourDate, roadmap.month, roadmap.year)) {
+        return reject(req, 'La tournée doit être dans le mois et l\'année de la roadmap.');
+      }
+
+      if (await tourInValidatedRoadmap(tourID, { RoadmapTours, Roadmaps }, roadmapID)) {
+        return reject(req, 'Cette tournée appartient déjà à une roadmap validée.');
+      }
+
       if (!req.data.sequence) {
-        const roadmapID = req.data.roadmap_ID;
+        const existing = await SELECT.from(RoadmapTours)
+          .columns('sequence')
+          .where({ roadmap_ID: roadmapID })
+          .orderBy('sequence desc')
+          .limit(1);
 
-        if (roadmapID) {
-          const existing = await SELECT.from(RoadmapTours)
-            .columns('sequence')
-            .where({ roadmap_ID: roadmapID })
-            .orderBy('sequence desc')
-            .limit(1);
-
-          req.data.sequence = existing.length && existing[0].sequence
-            ? existing[0].sequence + 1
-            : 1;
-        }
+        req.data.sequence = existing.length && existing[0].sequence
+          ? existing[0].sequence + 1
+          : 1;
       }
     });
 
@@ -649,6 +799,12 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les tournées créées peuvent être validées.');
       }
 
+      const validationError = validateTourMandatoryFields(req, tour);
+
+      if (validationError) {
+        return validationError;
+      }
+
       const supervisor = await SELECT.one.from(Users).where({ ID: supervisorID });
 
       if (!supervisor) {
@@ -671,6 +827,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.VALIDATED,
         reason: null,
+        entityType: 'TOUR',
         decidedBy_ID: supervisorID,
         tour_ID: tourID
       });
@@ -719,6 +876,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.REJECTED,
         reason: trimmedReason,
+        entityType: 'TOUR',
         decidedBy_ID: supervisorID,
         tour_ID: tourID
       });
@@ -747,6 +905,12 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les tournées créées peuvent être validées.');
       }
 
+      const validationError = validateTourMandatoryFields(req, tour);
+
+      if (validationError) {
+        return validationError;
+      }
+
       await UPDATE(Tours)
         .set({
           status: TOUR_STATUS.VALIDATED,
@@ -759,13 +923,14 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.VALIDATED,
         reason: null,
+        entityType: 'TOUR',
         tour_ID: tourID
       });
 
       return SELECT.one.from(Tours).where({ ID: tourID });
     });
 
-    this.on('reject', 'Tours', async (req) => {
+    this.on('rejectTour', 'Tours', async (req) => {
       const tourID = req.params?.[0]?.ID;
       const reason = req.data.reason;
 
@@ -801,6 +966,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.REJECTED,
         reason: trimmedReason,
+        entityType: 'TOUR',
         tour_ID: tourID
       });
 
@@ -828,13 +994,32 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les roadmaps créées peuvent être validées.');
       }
 
+      const validationError = await validateRoadmapBusinessRules(req, roadmapID, {
+        Roadmaps,
+        RoadmapTours,
+        Tours
+      });
+
+      if (validationError) {
+        return validationError;
+      }
+
       await UPDATE(Roadmaps)
         .set({
           status: ROADMAP_STATUS.VALIDATED,
           rejectionReason: null,
+          integrationStatus: roadmap.integrationStatus || 'NOT_INTEGRATED',
           updatedAt: new Date().toISOString()
         })
         .where({ ID: roadmapID });
+
+      await INSERT.into(DecisionHistories).entries({
+        ID: cds.utils.uuid(),
+        decision: ROADMAP_STATUS.VALIDATED,
+        reason: null,
+        entityType: 'ROADMAP',
+        roadmap_ID: roadmapID
+      });
 
       return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
     });
@@ -870,6 +1055,14 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
           updatedAt: new Date().toISOString()
         })
         .where({ ID: roadmapID });
+
+      await INSERT.into(DecisionHistories).entries({
+        ID: cds.utils.uuid(),
+        decision: ROADMAP_STATUS.REJECTED,
+        reason: trimmedReason,
+        entityType: 'ROADMAP',
+        roadmap_ID: roadmapID
+      });
 
       return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
     });
@@ -1091,6 +1284,252 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         decisionsCount: decisions.length,
         tourPointsCount: tourPoints.length
       };
+    });
+
+    this.on('getEligibleToursForRoadMap', async (req) => {
+      const { clientID, month, year } = req.data;
+
+      if (!clientID || !month || !year) {
+        return reject(req, 'Client, mois et année sont obligatoires.');
+      }
+
+      const eligible = await getEligibleToursForRoadMapInternal(clientID, month, year, {
+        Tours,
+        RoadmapTours,
+        Roadmaps
+      });
+
+      for (const tour of eligible) {
+        if (tour.client_ID) {
+          const client = await SELECT.one.from(Clients).where({ ID: tour.client_ID });
+          tour.clientName = client?.name || '';
+        }
+
+        if (tour.material_ID) {
+          const material = await SELECT.one.from(Materials).where({ ID: tour.material_ID });
+          tour.materialName = material?.description || '';
+        }
+      }
+
+      return eligible;
+    });
+
+    this.on('createRoadMapWithTours', async (req) => {
+      const {
+        clientID,
+        month,
+        year,
+        tourIDs,
+        humanResourceIDs,
+        materialResourceIDs
+      } = req.data;
+
+      if (!clientID || !month || !year) {
+        return reject(req, 'Client, mois et année sont obligatoires.');
+      }
+
+      if (!tourIDs || !tourIDs.length) {
+        return reject(req, 'Sélectionnez au moins une tournée.');
+      }
+
+      const client = await SELECT.one.from(Clients).where({ ID: clientID });
+
+      if (!client) {
+        return reject(req, 'Client introuvable.');
+      }
+
+      const eligible = await getEligibleToursForRoadMapInternal(clientID, month, year, {
+        Tours,
+        RoadmapTours,
+        Roadmaps
+      });
+      const eligibleIds = new Set(eligible.map((tour) => tour.ID));
+
+      for (const tourID of tourIDs) {
+        if (!eligibleIds.has(tourID)) {
+          return reject(req, 'Une ou plusieurs tournées sélectionnées ne sont pas éligibles.');
+        }
+      }
+
+      const { startDate, endDate } = monthRange(month, year);
+
+      return cds.tx(req, async () => {
+        const roadmapID = cds.utils.uuid();
+        const roadmapCode = await nextCode('Roadmaps', 'roadmapCode', 'RM');
+
+        await INSERT.into(Roadmaps).entries({
+          ID: roadmapID,
+          roadmapCode,
+          status: ROADMAP_STATUS.CREATED,
+          client_ID: clientID,
+          month,
+          year,
+          startDate,
+          endDate,
+          integrationStatus: 'NOT_INTEGRATED',
+          tour_ID: tourIDs[0]
+        });
+
+        let sequence = 1;
+
+        for (const tourID of tourIDs) {
+          await INSERT.into(RoadmapTours).entries({
+            ID: cds.utils.uuid(),
+            sequence: sequence++,
+            note: 'Tournée affectée',
+            roadmap_ID: roadmapID,
+            tour_ID: tourID
+          });
+
+          if ((humanResourceIDs && humanResourceIDs.length) || (materialResourceIDs && materialResourceIDs.length)) {
+            await replaceTourResources(
+              tourID,
+              humanResourceIDs,
+              materialResourceIDs,
+              { TourHumanResources, TourMaterialResources }
+            );
+          }
+        }
+
+        return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
+      });
+    });
+
+    this.on('updateRoadMapAssignments', async (req) => {
+      const {
+        roadMapID,
+        tourID,
+        humanResourceIDs,
+        materialResourceIDs
+      } = req.data;
+
+      if (!roadMapID || !tourID) {
+        return reject(req, 'Roadmap et tournée sont obligatoires.');
+      }
+
+      const assignment = await SELECT.one.from(RoadmapTours).where({
+        roadmap_ID: roadMapID,
+        tour_ID: tourID
+      });
+
+      if (!assignment) {
+        return reject(req, 'Cette tournée n\'est pas affectée à la roadmap.');
+      }
+
+      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadMapID });
+
+      if (!roadmap || isValidatedRoadmapStatus(roadmap.status)) {
+        return reject(req, 'Les affectations ne peuvent être modifiées que sur une roadmap non validée.');
+      }
+
+      await replaceTourResources(
+        tourID,
+        humanResourceIDs,
+        materialResourceIDs,
+        { TourHumanResources, TourMaterialResources }
+      );
+
+      return SELECT.one.from(RoadmapTours).where({ ID: assignment.ID });
+    });
+
+    this.on('generateRoadMapDocumentData', async (req) => {
+      const { roadMapID } = req.data;
+
+      if (!roadMapID) {
+        return reject(req, 'Identifiant de roadmap manquant.');
+      }
+
+      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadMapID });
+
+      if (!roadmap) {
+        return reject(req, 'Roadmap introuvable.');
+      }
+
+      const [client, assignments] = await Promise.all([
+        roadmap.client_ID ? SELECT.one.from(Clients).where({ ID: roadmap.client_ID }) : null,
+        SELECT.from(RoadmapTours).where({ roadmap_ID: roadMapID }).orderBy('sequence')
+      ]);
+
+      const tours = [];
+      const materialGroups = {};
+
+      for (const assignment of assignments) {
+        const tour = await SELECT.one.from(Tours).where({ ID: assignment.tour_ID });
+
+        if (!tour) {
+          continue;
+        }
+
+        const material = tour.material_ID
+          ? await SELECT.one.from(Materials).where({ ID: tour.material_ID })
+          : null;
+
+        const humanResources = await SELECT.from(TourHumanResources)
+          .where({ tour_ID: tour.ID })
+          .columns('humanResource_ID');
+        const materialResources = await SELECT.from(TourMaterialResources)
+          .where({ tour_ID: tour.ID })
+          .columns('materialResource_ID');
+
+        const humanLabels = [];
+
+        for (const entry of humanResources) {
+          const resource = entry.humanResource_ID
+            ? await SELECT.one.from(HumanResources).where({ ID: entry.humanResource_ID })
+            : null;
+
+          if (resource) {
+            humanLabels.push(resource.fullName);
+          }
+        }
+
+        const materialLabels = [];
+
+        for (const entry of materialResources) {
+          const resource = entry.materialResource_ID
+            ? await SELECT.one.from(MaterialResources).where({ ID: entry.materialResource_ID })
+            : null;
+
+          if (resource) {
+            materialLabels.push(resource.name);
+          }
+        }
+
+        const materialKey = material?.materialCode || material?.description || 'UNKNOWN';
+        const quantity = Number(tour.quantity || 0);
+
+        materialGroups[materialKey] = materialGroups[materialKey] || {
+          materialCode: material?.materialCode || '',
+          materialName: material?.description || '',
+          unitOfMeasure: tour.unitOfMeasure || material?.unitOfMeasure || '',
+          totalQuantity: 0
+        };
+        materialGroups[materialKey].totalQuantity += quantity;
+
+        tours.push({
+          tourCode: tour.tourCode,
+          tourDate: tour.tourDate,
+          clientName: client?.name || '',
+          materialName: material?.description || '',
+          quantity: tour.quantity,
+          unitOfMeasure: tour.unitOfMeasure,
+          humanResources: humanLabels.join(', '),
+          materialResources: materialLabels.join(', ')
+        });
+      }
+
+      return JSON.stringify({
+        logoUrl: 'https://www.sepur.com/wp-content/uploads/2025/01/logo-sepur-insertion-e1736954850722.png',
+        roadmapCode: roadmap.roadmapCode,
+        clientName: client?.name || '',
+        clientCode: client?.code || '',
+        month: roadmap.month,
+        year: roadmap.year,
+        status: normalizeRoadmapStatus(roadmap.status),
+        integrationStatus: roadmap.integrationStatus,
+        tours,
+        materialGroups: Object.values(materialGroups)
+      });
     });
 
     return super.init();

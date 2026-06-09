@@ -66,13 +66,15 @@ service RouteManagementService {
     }
     actions {
         action validate() returns Tours;
-        action reject(reason : String) returns Tours;
+        action rejectTour(reason : String) returns Tours;
     };
 
     @odata.draft.enabled
     @cds.redirection.target: true
     entity Roadmaps as projection on db.Roadmaps {
         *,
+        client.name                     as clientName               : String,
+        client.code                     as clientCode               : String,
         tour.tourCode                   as tourCode                 : String,
         tour.tourDate                   as tourDate                 : Date,
         tour.zone                       as tourZone                 : String,
@@ -84,7 +86,8 @@ service RouteManagementService {
 
         virtual statusCriticality       : Integer,
         virtual canValidate             : Boolean,
-        virtual canReject               : Boolean
+        virtual canReject               : Boolean,
+        virtual assignedToursCount      : Integer
     }
     actions {
         action validateRoadmap() returns Roadmaps;
@@ -215,6 +218,30 @@ service RouteManagementService {
     action rejectTour(tourID : UUID, supervisorID : UUID, reason : String) returns Tours;
 
     action createRoadmapFromTour(tourID : UUID) returns Roadmaps;
+
+    action createRoadMapWithTours(
+        clientID           : UUID,
+        month              : Integer,
+        year               : Integer,
+        tourIDs            : many UUID,
+        humanResourceIDs   : many UUID,
+        materialResourceIDs : many UUID
+    ) returns Roadmaps;
+
+    action updateRoadMapAssignments(
+        roadMapID          : UUID,
+        tourID             : UUID,
+        humanResourceIDs   : many UUID,
+        materialResourceIDs : many UUID
+    ) returns RoadmapTours;
+
+    function getEligibleToursForRoadMap(
+        clientID : UUID,
+        month    : Integer,
+        year     : Integer
+    ) returns many Tours;
+
+    function generateRoadMapDocumentData(roadMapID : UUID) returns LargeString;
 
     function getPlannerStats(userID : UUID) returns PlannerStats;
 

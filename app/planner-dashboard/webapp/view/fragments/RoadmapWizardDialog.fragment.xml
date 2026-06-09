@@ -1,0 +1,80 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:f="sap.ui.layout.form">
+
+    <Dialog id="roadmapWizardDialog" title="Créer une roadmap" contentWidth="42rem" draggable="true" resizable="true">
+        <content>
+            <f:SimpleForm editable="true" layout="ResponsiveGridLayout" columnsL="1" columnsM="1" class="sapUiSmallMarginTop">
+                <f:content>
+                    <Label text="Client" required="true" />
+                    <ComboBox selectedKey="{/roadmapWizard/client_ID}" items="{/roadmapWizard/clients}" showSecondaryValues="true">
+                        <core:Item key="{ID}" text="{name}" additionalText="{code}" />
+                    </ComboBox>
+
+                    <Label text="Mois" required="true" />
+                    <Select selectedKey="{/roadmapWizard/month}" forceSelection="false">
+                        <core:Item key="1" text="Janvier" />
+                        <core:Item key="2" text="Février" />
+                        <core:Item key="3" text="Mars" />
+                        <core:Item key="4" text="Avril" />
+                        <core:Item key="5" text="Mai" />
+                        <core:Item key="6" text="Juin" />
+                        <core:Item key="7" text="Juillet" />
+                        <core:Item key="8" text="Août" />
+                        <core:Item key="9" text="Septembre" />
+                        <core:Item key="10" text="Octobre" />
+                        <core:Item key="11" text="Novembre" />
+                        <core:Item key="12" text="Décembre" />
+                    </Select>
+
+                    <Label text="Année" required="true" />
+                    <Select selectedKey="{/roadmapWizard/year}" forceSelection="false">
+                        <core:Item key="2025" text="2025" />
+                        <core:Item key="2026" text="2026" />
+                        <core:Item key="2027" text="2027" />
+                    </Select>
+
+                    <Label text="Tournées éligibles" required="true" />
+                    <Button text="Charger les tournées validées" icon="sap-icon://search" press=".onLoadEligibleTours" type="Transparent" />
+
+                    <Label text="" />
+                    <Table id="eligibleToursTable" items="{/roadmapWizard/eligibleTours}" mode="MultiSelect" growing="true" noDataText="Sélectionnez client, mois et année puis chargez les tournées">
+                        <columns>
+                            <Column><Text text="N° tournée" /></Column>
+                            <Column><Text text="Date" /></Column>
+                            <Column><Text text="Matériau" /></Column>
+                            <Column hAlign="End"><Text text="Quantité" /></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{tourCode}" />
+                                    <Text text="{path: 'tourDate', type: 'sap.ui.model.type.Date', formatOptions: { style: 'medium' }}" />
+                                    <Text text="{materialName}" />
+                                    <Text text="{quantity}" />
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+
+                    <Label text="Ressources humaines" />
+                    <MultiComboBox selectedKeys="{/roadmapWizard/humanResourceIds}" items="{/roadmapWizard/humanResources}">
+                        <core:Item key="{ID}" text="{fullName}" additionalText="{employeeCode}" />
+                    </MultiComboBox>
+
+                    <Label text="Ressources matérielles" />
+                    <MultiComboBox selectedKeys="{/roadmapWizard/materialResourceIds}" items="{/roadmapWizard/materialResources}">
+                        <core:Item key="{ID}" text="{name}" additionalText="{equipmentCode}" />
+                    </MultiComboBox>
+                </f:content>
+            </f:SimpleForm>
+        </content>
+        <beginButton>
+            <Button text="Créer la roadmap" type="Emphasized" press=".onConfirmCreateRoadmap" />
+        </beginButton>
+        <endButton>
+            <Button text="Annuler" press=".onCancelRoadmapWizard" />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

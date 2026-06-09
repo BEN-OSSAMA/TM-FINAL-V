@@ -1,0 +1,55 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+    <VBox class="sectionContainer">
+        <HBox class="sectionHeaderBar" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
+            <VBox>
+                <Title text="Roadmaps mensuelles" level="H3" class="sectionTitle" />
+                <Text text="Regroupement des tournées validées par client et par mois" class="sectionSubtitle" />
+            </VBox>
+            <HBox class="sectionToolbar" wrap="Wrap">
+                <Button text="Créer" icon="sap-icon://add" type="Emphasized" press=".onOpenRoadmapWizard" class="btnCreate" />
+                <Button text="Aperçu" icon="sap-icon://print" type="Default" enabled="{/roadmapsSection/hasSelection}" press=".onPreviewSelectedRoadmap" class="sapUiSmallMarginBegin" />
+                <Button text="Actualiser" icon="sap-icon://refresh" type="Default" press=".onRefreshRoadmapsSection" class="sapUiSmallMarginBegin" />
+            </HBox>
+        </HBox>
+
+        <Table
+            id="roadmapsTable"
+            class="sectionTable"
+            items="{/roadmapsSection/items}"
+            mode="SingleSelectLeft"
+            growing="true"
+            growingThreshold="20"
+            selectionChange=".onRoadmapSelectionChange"
+            noDataText="Aucune roadmap trouvée">
+            <columns>
+                <Column><Text text="N° roadmap" /></Column>
+                <Column><Text text="Client" /></Column>
+                <Column hAlign="Center"><Text text="Mois" /></Column>
+                <Column hAlign="Center"><Text text="Année" /></Column>
+                <Column><Text text="Période" /></Column>
+                <Column><Text text="Statut" /></Column>
+                <Column><Text text="Intégration" /></Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{roadmapCode}" />
+                        <Text text="{clientName}" />
+                        <Text text="{month}" />
+                        <Text text="{year}" />
+                        <HBox>
+                            <Text text="{path: 'startDate', type: 'sap.ui.model.type.Date', formatOptions: { style: 'medium' }}" />
+                            <Text text=" - " class="sapUiTinyMarginBegin sapUiTinyMarginEnd" />
+                            <Text text="{path: 'endDate', type: 'sap.ui.model.type.Date', formatOptions: { style: 'medium' }}" />
+                        </HBox>
+                        <ObjectStatus text="{status}" state="{= ${status} === 'VALIDATED' ? 'Success' : (${status} === 'REJECTED' ? 'Error' : 'Warning') }" />
+                        <Text text="{integrationStatus}" />
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+    </VBox>
+</core:FragmentDefinition>

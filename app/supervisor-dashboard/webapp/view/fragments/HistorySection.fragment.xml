@@ -1,0 +1,29 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <VBox class="sectionContainer">
+        <HBox class="sectionHeaderBar" justifyContent="SpaceBetween" alignItems="Center">
+            <VBox>
+                <Title text="Historique des décisions" level="H3" class="sectionTitle" />
+                <Text text="Validations et rejets enregistrés" class="sectionSubtitle" />
+            </VBox>
+            <Button text="Actualiser" icon="sap-icon://refresh" press=".onRefreshHistorySection" />
+        </HBox>
+        <Table class="sectionTable" items="{view>/historySection/items}" growing="true">
+            <columns>
+                <Column><Text text="Entité" /></Column>
+                <Column><Text text="Décision" /></Column>
+                <Column><Text text="Motif" /></Column>
+                <Column><Text text="Date" /></Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{view>entityType}" />
+                        <ObjectStatus text="{view>decision}" state="{= ${view>decision} === 'VALIDATED' || ${view>decision} === 'ACCEPTED' ? 'Success' : 'Error' }" />
+                        <Text text="{view>reason}" />
+                        <Text text="{path: 'view>decisionDate', type: 'sap.ui.model.type.DateTime', formatOptions: { style: 'medium' }}" />
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+    </VBox>
+</core:FragmentDefinition>

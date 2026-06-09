@@ -47,6 +47,11 @@ sap.ui.define([
                     cancelledRoadmaps: 0
                 },
 
+                integrationStats: {
+                    pendingCount: 0,
+                    totalValidated: 0
+                },
+
                 salesOrderStats: {
                     totalSalesOrders: 0
                 },

@@ -35,7 +35,9 @@ sap.ui.define([
 
     const SECTION_FRAGMENTS = {
         dashboard: "sepur.planner.view.fragments.DashboardHome",
-        tours: "sepur.planner.view.fragments.ToursSection"
+        tours: "sepur.planner.view.fragments.ToursSection",
+        roadmaps: "sepur.planner.view.fragments.RoadmapsSection",
+        rejectedTours: "sepur.planner.view.fragments.RejectedToursSection"
     };
 
     const MENU_BUTTON_IDS = {
@@ -45,7 +47,7 @@ sap.ui.define([
         rejectedTours: "btnMenuRejectedTours"
     };
 
-    const DELETABLE_TOUR_STATUSES = ["DRAFT", "PENDING", "CREATED", "REJECTED", "CANCELLED"];
+    const DELETABLE_TOUR_STATUSES = ["DRAFT", "CREATED", "REJECTED"];
 
     return Controller.extend("sepur.planner.controller.Dashboard", {
 
@@ -93,7 +95,45 @@ sap.ui.define([
                     hasSelection: false
                 },
 
+                roadmapsSection: {
+                    items: [],
+                    hasSelection: false,
+                    selectedId: ""
+                },
+
+                rejectedToursSection: {
+                    items: [],
+                    hasSelection: false,
+                    selectedTour: null
+                },
+
+                roadmapWizard: {
+                    client_ID: "",
+                    month: "",
+                    year: "",
+                    clients: [],
+                    eligibleTours: [],
+                    humanResourceIds: [],
+                    materialResourceIds: [],
+                    humanResources: [],
+                    materialResources: []
+                },
+
+                roadmapPrint: {
+                    logoUrl: "",
+                    roadmapCode: "",
+                    clientName: "",
+                    clientCode: "",
+                    month: "",
+                    year: "",
+                    status: "",
+                    tours: [],
+                    materialGroups: []
+                },
+
                 tourDialog: {
+                    mode: "create",
+                    editTourId: "",
                     tourCode: "",
                     collectionDate: "",
                     client_ID: "",
@@ -119,6 +159,8 @@ sap.ui.define([
 
             this._oCurrentFragment = null;
             this._oCreateTourDialog = null;
+            this._oRoadmapWizardDialog = null;
+            this._oRoadmapPrintDialog = null;
 
             this.loadDashboardData().then(function () {
                 this._showSection("dashboard");
@@ -143,6 +185,16 @@ sap.ui.define([
             if (this._oCreateTourDialog) {
                 this._oCreateTourDialog.destroy();
                 this._oCreateTourDialog = null;
+            }
+
+            if (this._oRoadmapWizardDialog) {
+                this._oRoadmapWizardDialog.destroy();
+                this._oRoadmapWizardDialog = null;
+            }
+
+            if (this._oRoadmapPrintDialog) {
+                this._oRoadmapPrintDialog.destroy();
+                this._oRoadmapPrintDialog = null;
             }
 
             if (this._oCurrentFragment) {
@@ -183,11 +235,6 @@ sap.ui.define([
         _showSection: async function (sSection) {
             const oModel = this.getView().getModel();
 
-            if (sSection === "roadmaps" || sSection === "rejectedTours") {
-                MessageToast.show("Section en cours d'implémentation — prochaine étape.");
-                return;
-            }
-
             oModel.setProperty("/currentSection", sSection);
             this._updateActiveMenu(sSection);
 
@@ -226,6 +273,10 @@ sap.ui.define([
                     }.bind(this), 300);
                 } else if (sSection === "tours") {
                     await this._loadToursSection();
+                } else if (sSection === "roadmaps") {
+                    await this._loadRoadmapsSection();
+                } else if (sSection === "rejectedTours") {
+                    await this._loadRejectedToursSection();
                 }
             } catch (e) {
                 console.error("[Dashboard] Erreur chargement section:", e);
@@ -329,6 +380,9 @@ sap.ui.define([
                     this.getView().addDependent(this._oCreateTourDialog);
                 }
 
+                this.getView().getModel().setProperty("/tourDialog/mode", "create");
+                this.getView().getModel().setProperty("/tourDialog/editTourId", "");
+                this._oCreateTourDialog.setTitle("Créer une tournée");
                 await this._loadTourDialogData();
                 this._oCreateTourDialog.open();
             } catch (e) {
@@ -426,6 +480,7 @@ sap.ui.define([
             const oModel = this.getView().getModel();
             const oData = oModel.getProperty("/tourDialog");
             const oUser = oModel.getProperty("/user");
+            const sMode = oData.mode || "create";
 
             oModel.setProperty("/busy", true);
 
@@ -440,31 +495,80 @@ sap.ui.define([
                     status: "CREATED"
                 };
 
-                if (oUser && oUser.ID) {
-                    oPayload.createdByUser_ID = oUser.ID;
+                if (sMode === "edit" && oData.editTourId) {
+                    await this._patchJson("/odata/v4/route-management/Tours(" + oData.editTourId + ")", oPayload);
+                    await this._replaceTourResourceAssignments(
+                        oData.editTourId,
+                        oData.humanResourceIds || [],
+                        oData.materialResourceIds || []
+                    );
+                    MessageToast.show("Tournée corrigée et resoumise.");
+                } else {
+                    if (oUser && oUser.ID) {
+                        oPayload.createdByUser_ID = oUser.ID;
+                    }
+
+                    const oCreatedTour = await this._postJson("/odata/v4/route-management/Tours", oPayload);
+                    const oActiveTour = await this._activateTourDraftIfNeeded(oCreatedTour);
+
+                    await this._createTourResourceAssignments(
+                        oActiveTour.ID,
+                        oData.humanResourceIds || [],
+                        oData.materialResourceIds || []
+                    );
+
+                    MessageToast.show("Tournée créée avec succès.");
                 }
-
-                const oCreatedTour = await this._postJson("/odata/v4/route-management/Tours", oPayload);
-
-                await this._createTourResourceAssignments(
-                    oCreatedTour.ID,
-                    oData.humanResourceIds || [],
-                    oData.materialResourceIds || []
-                );
 
                 if (this._oCreateTourDialog) {
                     this._oCreateTourDialog.close();
                 }
 
-                MessageToast.show("Tournée créée avec succès.");
-
                 await this._loadToursSection();
+                await this._loadRejectedToursSection();
                 await this.loadDashboardData();
             } catch (e) {
-                console.error("[Tours] Erreur création:", e);
-                MessageBox.error("Impossible de créer la tournée.\n\n" + (e.message || ""));
+                console.error("[Tours] Erreur sauvegarde:", e);
+                MessageBox.error("Impossible d'enregistrer la tournée.\n\n" + (e.message || ""));
             } finally {
                 oModel.setProperty("/busy", false);
+            }
+        },
+
+        _replaceTourResourceAssignments: async function (sTourId, aHumanIds, aMaterialIds) {
+            const existingHuman = await this._fetchCollection(
+                "/odata/v4/route-management/TourHumanResources?$filter=tour_ID eq " + sTourId + "&$select=ID"
+            );
+            const existingMaterial = await this._fetchCollection(
+                "/odata/v4/route-management/TourMaterialResources?$filter=tour_ID eq " + sTourId + "&$select=ID"
+            );
+
+            for (const row of existingHuman) {
+                await this._deleteEntity("/odata/v4/route-management/TourHumanResources(" + row.ID + ")");
+            }
+
+            for (const row of existingMaterial) {
+                await this._deleteEntity("/odata/v4/route-management/TourMaterialResources(" + row.ID + ")");
+            }
+
+            await this._createTourResourceAssignments(sTourId, aHumanIds, aMaterialIds);
+        },
+
+        _patchJson: async function (sUrl, oBody) {
+            const response = await fetch(sUrl, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                },
+                body: JSON.stringify(oBody)
+            });
+
+            if (!response.ok && response.status !== 204) {
+                const oResult = await response.json().catch(function () {
+                    return {};
+                });
+                throw new Error(oResult.error?.message || ("HTTP " + response.status));
             }
         },
 
@@ -569,6 +673,31 @@ sap.ui.define([
                     Accept: "application/json"
                 },
                 body: JSON.stringify(oBody)
+            });
+
+            const oResult = await response.json().catch(function () {
+                return {};
+            });
+
+            if (!response.ok) {
+                const sMessage = oResult.error?.message || oResult.error?.code || ("HTTP " + response.status);
+                throw new Error(sMessage);
+            }
+
+            return oResult;
+        },
+
+        _activateTourDraftIfNeeded: async function (oTour) {
+            if (!oTour || oTour.IsActiveEntity !== false) {
+                return oTour;
+            }
+
+            const sUrl = "/odata/v4/route-management/Tours(ID=" + oTour.ID + ",IsActiveEntity=false)/RouteManagementService.draftActivate";
+            const response = await fetch(sUrl, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json"
+                }
             });
 
             const oResult = await response.json().catch(function () {
@@ -1078,6 +1207,10 @@ sap.ui.define([
 
             if (sSection === "tours") {
                 this._loadToursSection();
+            } else if (sSection === "roadmaps") {
+                this._loadRoadmapsSection();
+            } else if (sSection === "rejectedTours") {
+                this._loadRejectedToursSection();
             }
 
             this.loadDashboardData();
@@ -1085,6 +1218,330 @@ sap.ui.define([
 
         onOpenHome: function () {
             window.location.href = "/home/webapp/index.html";
+        },
+
+        /* ===================================================== */
+        /* ROADMAPS SECTION                                      */
+        /* ===================================================== */
+
+        _loadRoadmapsSection: async function () {
+            const oModel = this.getView().getModel();
+            oModel.setProperty("/busy", true);
+
+            try {
+                const sUrl = "/odata/v4/route-management/Roadmaps" +
+                    "?$select=ID,roadmapCode,status,startDate,endDate,month,year,integrationStatus,clientName" +
+                    "&$orderby=createdAt desc&$top=500";
+                const aRoadmaps = await this._fetchCollection(sUrl);
+
+                oModel.setProperty("/roadmapsSection/items", aRoadmaps);
+                oModel.setProperty("/roadmapsSection/hasSelection", false);
+                oModel.setProperty("/roadmapsSection/selectedId", "");
+            } catch (e) {
+                MessageBox.error("Impossible de charger les roadmaps.\n\n" + (e.message || ""));
+            } finally {
+                oModel.setProperty("/busy", false);
+            }
+        },
+
+        onRefreshRoadmapsSection: function () {
+            this._loadRoadmapsSection();
+        },
+
+        onRoadmapSelectionChange: function () {
+            const oTable = this.byId("roadmapsTable");
+            const oModel = this.getView().getModel();
+
+            if (!oTable) {
+                return;
+            }
+
+            const aSelected = oTable.getSelectedItems();
+            const bHasSelection = aSelected.length > 0;
+            const sSelectedId = bHasSelection ? aSelected[0].getBindingContext().getObject().ID : "";
+
+            oModel.setProperty("/roadmapsSection/hasSelection", bHasSelection);
+            oModel.setProperty("/roadmapsSection/selectedId", sSelectedId);
+        },
+
+        onOpenRoadmapWizard: async function () {
+            try {
+                if (!this._oRoadmapWizardDialog) {
+                    this._oRoadmapWizardDialog = await Fragment.load({
+                        id: this.getView().getId() + "--roadmapWizard",
+                        name: "sepur.planner.view.fragments.RoadmapWizardDialog",
+                        controller: this
+                    });
+                    this.getView().addDependent(this._oRoadmapWizardDialog);
+                }
+
+                const now = new Date();
+                const aResults = await Promise.all([
+                    this._fetchCollection("/odata/v4/route-management/Clients?$select=ID,code,name&$orderby=name"),
+                    this._fetchCollection("/odata/v4/route-management/AvailableHumanResources?$select=ID,employeeCode,fullName&$orderby=fullName"),
+                    this._fetchCollection("/odata/v4/route-management/AvailableMaterialResources?$select=ID,equipmentCode,name&$orderby=name")
+                ]);
+
+                this.getView().getModel().setProperty("/roadmapWizard", {
+                    client_ID: "",
+                    month: String(now.getMonth() + 1),
+                    year: String(now.getFullYear()),
+                    clients: aResults[0],
+                    eligibleTours: [],
+                    humanResourceIds: [],
+                    materialResourceIds: [],
+                    humanResources: aResults[1],
+                    materialResources: aResults[2]
+                });
+
+                this._oRoadmapWizardDialog.open();
+            } catch (e) {
+                MessageBox.error("Impossible d'ouvrir l'assistant roadmap.");
+            }
+        },
+
+        onLoadEligibleTours: async function () {
+            const oModel = this.getView().getModel();
+            const oWizard = oModel.getProperty("/roadmapWizard");
+
+            if (!oWizard.client_ID || !oWizard.month || !oWizard.year) {
+                MessageBox.error("Sélectionnez un client, un mois et une année.");
+                return;
+            }
+
+            oModel.setProperty("/busy", true);
+
+            try {
+                const sUrl = "/odata/v4/route-management/getEligibleToursForRoadMap(clientID=" +
+                    oWizard.client_ID + ",month=" + oWizard.month + ",year=" + oWizard.year + ")";
+                const response = await fetch(sUrl);
+
+                if (!response.ok) {
+                    throw new Error("Erreur HTTP " + response.status);
+                }
+
+                const data = await response.json();
+                const aTours = data.value || [];
+
+                oModel.setProperty("/roadmapWizard/eligibleTours", aTours);
+                MessageToast.show(aTours.length + " tournée(s) éligible(s).");
+            } catch (e) {
+                MessageBox.error("Impossible de charger les tournées éligibles.\n\n" + (e.message || ""));
+            } finally {
+                oModel.setProperty("/busy", false);
+            }
+        },
+
+        onConfirmCreateRoadmap: async function () {
+            const oModel = this.getView().getModel();
+            const oWizard = oModel.getProperty("/roadmapWizard");
+            const oTable = this.byId("eligibleToursTable");
+            const aSelected = oTable ? oTable.getSelectedItems() : [];
+
+            if (!oWizard.client_ID || !oWizard.month || !oWizard.year) {
+                MessageBox.error("Client, mois et année sont obligatoires.");
+                return;
+            }
+
+            if (!aSelected.length) {
+                MessageBox.error("Sélectionnez au moins une tournée éligible.");
+                return;
+            }
+
+            const aTourIDs = aSelected.map(function (oItem) {
+                return oItem.getBindingContext().getObject().ID;
+            });
+
+            oModel.setProperty("/busy", true);
+
+            try {
+                const response = await fetch("/odata/v4/route-management/createRoadMapWithTours", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json"
+                    },
+                    body: JSON.stringify({
+                        clientID: oWizard.client_ID,
+                        month: Number(oWizard.month),
+                        year: Number(oWizard.year),
+                        tourIDs: aTourIDs,
+                        humanResourceIDs: oWizard.humanResourceIds || [],
+                        materialResourceIDs: oWizard.materialResourceIds || []
+                    })
+                });
+
+                const oResult = await response.json().catch(function () {
+                    return {};
+                });
+
+                if (!response.ok) {
+                    throw new Error(oResult.error?.message || ("HTTP " + response.status));
+                }
+
+                if (this._oRoadmapWizardDialog) {
+                    this._oRoadmapWizardDialog.close();
+                }
+
+                MessageToast.show("Roadmap créée avec succès.");
+                await this._loadRoadmapsSection();
+                await this.loadDashboardData();
+            } catch (e) {
+                MessageBox.error("Impossible de créer la roadmap.\n\n" + (e.message || ""));
+            } finally {
+                oModel.setProperty("/busy", false);
+            }
+        },
+
+        onCancelRoadmapWizard: function () {
+            if (this._oRoadmapWizardDialog) {
+                this._oRoadmapWizardDialog.close();
+            }
+        },
+
+        onPreviewSelectedRoadmap: async function () {
+            const sRoadmapId = this.getView().getModel().getProperty("/roadmapsSection/selectedId");
+
+            if (!sRoadmapId) {
+                MessageToast.show("Sélectionnez une roadmap.");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    "/odata/v4/route-management/generateRoadMapDocumentData(roadMapID=" + sRoadmapId + ")"
+                );
+
+                if (!response.ok) {
+                    throw new Error("Erreur HTTP " + response.status);
+                }
+
+                const data = await response.json();
+                const sJson = typeof data.value === "string" ? data.value : data.value?.value || data.value;
+                const oPrint = typeof sJson === "string" ? JSON.parse(sJson) : sJson;
+
+                if (!this._oRoadmapPrintDialog) {
+                    this._oRoadmapPrintDialog = await Fragment.load({
+                        id: this.getView().getId() + "--roadmapPrint",
+                        name: "sepur.planner.view.fragments.RoadmapPrintDialog",
+                        controller: this
+                    });
+                    this.getView().addDependent(this._oRoadmapPrintDialog);
+                }
+
+                this.getView().getModel().setProperty("/roadmapPrint", oPrint);
+                this._oRoadmapPrintDialog.open();
+            } catch (e) {
+                MessageBox.error("Impossible de générer la feuille de route.\n\n" + (e.message || ""));
+            }
+        },
+
+        onCloseRoadmapPrint: function () {
+            if (this._oRoadmapPrintDialog) {
+                this._oRoadmapPrintDialog.close();
+            }
+        },
+
+        /* ===================================================== */
+        /* REJECTED TOURS SECTION                                */
+        /* ===================================================== */
+
+        _loadRejectedToursSection: async function () {
+            const oModel = this.getView().getModel();
+            oModel.setProperty("/busy", true);
+
+            try {
+                const sUrl = "/odata/v4/route-management/Tours" +
+                    "?$filter=status eq 'REJECTED'" +
+                    "&$select=ID,tourCode,tourDate,status,clientName,materialName,quantity,unitOfMeasure,description,rejectionReason,client_ID,material_ID" +
+                    "&$expand=humanResources($select=humanResource_ID),materialResources($select=materialResource_ID)" +
+                    "&$orderby=modifiedAt desc&$top=500";
+                const response = await fetch(sUrl);
+
+                if (!response.ok) {
+                    throw new Error("Erreur HTTP " + response.status);
+                }
+
+                const data = await response.json();
+                oModel.setProperty("/rejectedToursSection/items", data.value || []);
+                oModel.setProperty("/rejectedToursSection/hasSelection", false);
+                oModel.setProperty("/rejectedToursSection/selectedTour", null);
+            } catch (e) {
+                MessageBox.error("Impossible de charger les tournées rejetées.\n\n" + (e.message || ""));
+            } finally {
+                oModel.setProperty("/busy", false);
+            }
+        },
+
+        onRefreshRejectedToursSection: function () {
+            this._loadRejectedToursSection();
+        },
+
+        onRejectedTourSelectionChange: function () {
+            const oTable = this.byId("rejectedToursTable");
+            const oModel = this.getView().getModel();
+
+            if (!oTable) {
+                return;
+            }
+
+            const aSelected = oTable.getSelectedItems();
+            oModel.setProperty("/rejectedToursSection/hasSelection", aSelected.length > 0);
+            oModel.setProperty(
+                "/rejectedToursSection/selectedTour",
+                aSelected.length ? aSelected[0].getBindingContext().getObject() : null
+            );
+        },
+
+        onEditRejectedTour: async function () {
+            const oTour = this.getView().getModel().getProperty("/rejectedToursSection/selectedTour");
+
+            if (!oTour) {
+                MessageToast.show("Sélectionnez une tournée rejetée.");
+                return;
+            }
+
+            try {
+                if (!this._oCreateTourDialog) {
+                    this._oCreateTourDialog = await Fragment.load({
+                        id: this.getView().getId() + "--createTour",
+                        name: "sepur.planner.view.fragments.CreateTourDialog",
+                        controller: this
+                    });
+                    this.getView().addDependent(this._oCreateTourDialog);
+                }
+
+                await this._loadTourDialogData();
+
+                const aHumanIds = (oTour.humanResources || []).map(function (r) {
+                    return r.humanResource_ID;
+                }).filter(Boolean);
+                const aMaterialIds = (oTour.materialResources || []).map(function (r) {
+                    return r.materialResource_ID;
+                }).filter(Boolean);
+
+                this.getView().getModel().setProperty("/tourDialog", Object.assign(
+                    {},
+                    this.getView().getModel().getProperty("/tourDialog"),
+                    {
+                        mode: "edit",
+                        editTourId: oTour.ID,
+                        collectionDate: oTour.tourDate,
+                        client_ID: oTour.client_ID,
+                        material_ID: oTour.material_ID,
+                        quantity: String(oTour.quantity || ""),
+                        unitOfMeasure: oTour.unitOfMeasure || "",
+                        remarks: oTour.description || "",
+                        humanResourceIds: aHumanIds,
+                        materialResourceIds: aMaterialIds
+                    }
+                ));
+
+                this._oCreateTourDialog.setTitle("Corriger la tournée rejetée");
+                this._oCreateTourDialog.open();
+            } catch (e) {
+                MessageBox.error("Impossible d'ouvrir le formulaire de correction.");
+            }
         },
 
         onLogout: function () {
