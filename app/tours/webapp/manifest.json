@@ -102,8 +102,21 @@
           "options": {
             "settings": {
               "contextPath": "/Tours",
-              "variantManagement": "Page",
-              "initialLoad": "Enabled",
+  "variantManagement": "None",
+  "initialLoad": "Enabled",
+  "hideDraftToggle": true,
+              "content": {
+                "header": {
+                  "actions": {
+                    "RetourDashboardList": {
+                      "text": "Retour au dashboard",
+                      "press": "ns.tours.ext.controller.ListReportActions.onBackToDashboard",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              },
               "navigation": {
                 "Tours": {
                   "detail": {
@@ -128,7 +141,19 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Tours"
+              "contextPath": "/Tours",
+              "content": {
+                "header": {
+                  "actions": {
+                    "RetourBackObjectPage": {
+                      "text": "Retour",
+                      "press": "ns.tours.ext.controller.ListReportActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
             }
           }
         }

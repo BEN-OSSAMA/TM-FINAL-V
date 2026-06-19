@@ -1,0 +1,44 @@
+/* ===================================================== */
+/* Boutons Roadmaps                                      */
+/* ===================================================== */
+
+button[id*="RetourDashboardList"] .sapMBtnInner,
+button[id*="RetourBackObjectPage"] .sapMBtnInner {
+  background-color: #0a6ed1 !important;
+  border-color: #0a6ed1 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RetourDashboardList"] .sapMBtnContent,
+button[id*="RetourBackObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="AutoAssignTours"] .sapMBtnInner {
+  background-color: #0a6ed1 !important;
+  border-color: #0a6ed1 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="AutoAssignTours"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="GenerateRoadmapSheet"] .sapMBtnInner {
+  background-color: #107e3e !important;
+  border-color: #107e3e !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="GenerateRoadmapSheet"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}

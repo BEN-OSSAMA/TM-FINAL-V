@@ -1,4 +1,4 @@
-ID;code;name;address;city;phone;email
-22222222-2222-2222-2222-222222222201;CLI-001;Hôpital Central;12 rue de la Santé;Paris;0140000001;contact@hopital-central.fr
-22222222-2222-2222-2222-222222222202;CLI-002;Clinique du Nord;45 av. des Lilas;Lyon;0478000002;info@clinique-nord.fr
-22222222-2222-2222-2222-222222222203;CLI-003;Laboratoire BioMed;8 impasse Science;Marseille;0491000003;lab@biomed.fr
+ID,customerCode,code,name,address,city,phone,email,createdAt,createdBy,modifiedAt,modifiedBy
+22222222-2222-2222-2222-222222222201,CLI-001,CLI-001,Hôpital Central,12 rue de la Santé,Paris,0140000001,contact@hopital-central.fr,,,,
+22222222-2222-2222-2222-222222222202,CLI-002,CLI-002,Clinique du Nord,45 av. des Lilas,Lyon,0478000002,info@clinique-nord.fr,,,,
+22222222-2222-2222-2222-222222222203,CLI-003,CLI-003,Laboratoire BioMed,8 impasse Science,Marseille,0491000003,lab@biomed.fr,,,,

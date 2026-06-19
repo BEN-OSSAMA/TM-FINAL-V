@@ -1,0 +1,74 @@
+/* ===================================================== */
+/* Bouton Valider - vert                                 */
+/* ===================================================== */
+
+button[id*="ValidateSelectedRoadmap"] .sapMBtnInner,
+button[id*="ValidateRoadmapObjectPage"] .sapMBtnInner {
+  background-color: #107e3e !important;
+  border-color: #107e3e !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="ValidateSelectedRoadmap"] .sapMBtnContent,
+button[id*="ValidateRoadmapObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="ValidateSelectedRoadmap"]:hover .sapMBtnInner,
+button[id*="ValidateRoadmapObjectPage"]:hover .sapMBtnInner {
+  background-color: #0b6b35 !important;
+  border-color: #0b6b35 !important;
+}
+
+/* ===================================================== */
+/* Bouton Rejeter - rouge                                */
+/* ===================================================== */
+
+button[id*="RejectSelectedRoadmap"] .sapMBtnInner,
+button[id*="RejectRoadmapObjectPage"] .sapMBtnInner {
+  background-color: #bb0000 !important;
+  border-color: #bb0000 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RejectSelectedRoadmap"] .sapMBtnContent,
+button[id*="RejectRoadmapObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RejectSelectedRoadmap"]:hover .sapMBtnInner,
+button[id*="RejectRoadmapObjectPage"]:hover .sapMBtnInner {
+  background-color: #970000 !important;
+  border-color: #970000 !important;
+}
+
+/* ===================================================== */
+/* Boutons Retour - bleu SAP comme Go                    */
+/* ===================================================== */
+
+button[id*="RetourSupervisorDashboard"] .sapMBtnInner,
+button[id*="BackObjectPage"] .sapMBtnInner {
+  background-color: #0a6ed1 !important;
+  border-color: #0a6ed1 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RetourSupervisorDashboard"] .sapMBtnContent,
+button[id*="BackObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RetourSupervisorDashboard"]:hover .sapMBtnInner,
+button[id*="BackObjectPage"]:hover .sapMBtnInner {
+  background-color: #085caf !important;
+  border-color: #085caf !important;
+}

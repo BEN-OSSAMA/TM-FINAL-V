@@ -45,7 +45,9 @@ sap.ui.define([
                 }
 
                 localStorage.setItem("sepur.user", JSON.stringify(oResult));
-
+                localStorage.setItem("currentUser", JSON.stringify(oResult));
+                localStorage.setItem("sepurUser", JSON.stringify(oResult));
+                
                 MessageToast.show("Bienvenue " + oResult.fullName);
 
                 if (oResult.role === "PLANIFICATEUR") {

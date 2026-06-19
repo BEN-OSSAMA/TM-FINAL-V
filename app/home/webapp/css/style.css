@@ -1,87 +1,273 @@
-.homePage {
-  background: #eef2f5;
+.sepurLaunchpadPage {
+  background: #f4f6f8;
 }
 
-.homeTopBar {
-  height: 3rem;
-  background: #2f3f50;
-  border: none;
+.launchpadShell {
+  min-height: 100vh;
+  background: #f4f6f8;
+}
+
+/* HEADER */
+
+.sapTopHeader {
+  height: 4rem;
+  background: #354a5f;
+  color: #ffffff;
   padding: 0 1rem;
+  box-shadow: 0 0.125rem 0.5rem rgba(34, 53, 72, 0.25);
+  z-index: 10;
 }
 
-.homeTopBar .sapMBtnIcon,
-.homeTopBar .sapMBtnContent {
+.headerLeft {
+  gap: 0.75rem;
+}
+
+.headerRight {
+  gap: 0.5rem;
+}
+
+.sapLogoImage {
+  width: 52px;
+  height: auto;
+  background: transparent;
+}
+
+.headerTitle {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.headerIconButton .sapMBtnIcon,
+.profileButton .sapMBtnIcon {
   color: #ffffff !important;
 }
 
-.sapLogo {
-  width: 3rem;
-  height: auto;
-  margin: 0 1rem 0 0.5rem;
-}
-
-.homeTitleButton .sapMBtnContent {
+.profileButton .sapMBtnContent {
   color: #ffffff !important;
   font-weight: 600;
 }
 
-.heroSection {
-  height: 16rem;
-  background-image:
-    linear-gradient(rgba(15, 28, 42, 0.1), rgba(15, 28, 42, 0.55)),
-    url("https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop");
+.appMenuButton .sapMBtnIcon {
+  color: #ffffff !important;
+}
+
+/* HERO */
+
+.heroCarousel {
+  width: 100%;
+  background: #1d2d3e;
+}
+
+.heroCarousel .sapMCrslItem {
+  height: 340px;
+}
+
+.heroSlide {
+  height: 340px;
+  width: 100%;
   background-size: cover;
   background-position: center;
-  justify-content: flex-end;
-  align-items: center;
-  padding-bottom: 1.5rem;
 }
 
-.heroTitle {
+.heroSlideOne {
+  background:
+    linear-gradient(90deg, rgba(10, 35, 65, 0.82), rgba(10, 110, 209, 0.38)),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.35) 0 8%, transparent 9%),
+    linear-gradient(135deg, #0b1f33 0%, #0a6ed1 58%, #8fd3ff 100%);
+}
+
+.heroSlideTwo {
+  background:
+    linear-gradient(90deg, rgba(8, 55, 35, 0.82), rgba(16, 126, 62, 0.4)),
+    radial-gradient(circle at 84% 28%, rgba(255, 255, 255, 0.35) 0 8%, transparent 9%),
+    linear-gradient(135deg, #103b2a 0%, #107e3e 58%, #9be7c6 100%);
+}
+
+.heroSlideThree {
+  background:
+    linear-gradient(90deg, rgba(80, 35, 0, 0.82), rgba(223, 110, 12, 0.4)),
+    radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.35) 0 8%, transparent 9%),
+    linear-gradient(135deg, #4d2600 0%, #df6e0c 58%, #ffd29b 100%);
+}
+
+.heroOverlay {
+  height: 100%;
+  justify-content: center;
+  padding-left: 4rem;
+  max-width: 760px;
+}
+
+.heroMainTitle {
   color: #ffffff;
-  font-size: 1.8rem;
-  font-weight: 700;
-  text-shadow: 0 0.125rem 0.35rem rgba(0, 0, 0, 0.55);
+  font-size: 2.2rem;
+  font-weight: 800;
+  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.35);
 }
 
-.homeContent {
-  min-height: calc(100vh - 19rem);
-  padding: 2.5rem 3rem 4rem 3rem;
+.heroMainDescription {
+  margin-top: 0.8rem;
+  color: #ffffff;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.35);
 }
 
-.welcomePanel {
+.heroActions {
+  margin-top: 1.5rem;
+  gap: 0.75rem;
+}
+
+/* CONTENT */
+
+.contentArea {
+  padding: 3.5rem 3.25rem;
+  background: #f4f6f8;
+}
+
+.sectionTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1d2d3e;
+}
+
+.sectionSubtitle {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  color: #5b738b;
+}
+
+/* SERVICE TILES */
+
+.serviceTileGrid {
+  margin-top: 2rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.serviceTile {
+  width: 185px !important;
+  height: 190px !important;
   background: #ffffff;
-  border: 1px solid #d9e2ec;
-  border-radius: 0.75rem;
-  padding: 1.2rem 1.5rem;
-  margin-bottom: 2.2rem;
-  box-shadow: 0 0.125rem 0.5rem rgba(34, 53, 72, 0.08);
-}
-
-.sectionLabel {
-  color: #0a6ed1;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04rem;
-}
-
-.welcomeSubtitle {
-  color: #5b6b7a;
-  margin-top: 0.4rem;
-}
-
-.tileContainer {
-  gap: 1.5rem;
-}
-
-.homeTile {
-  width: 12rem !important;
-  height: 9rem !important;
-  box-shadow: 0 0.125rem 0.6rem rgba(34, 53, 72, 0.15);
+  border: 1px solid #d9e0e7;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.125rem 0.5rem rgba(34, 53, 72, 0.12);
   transition: all 0.18s ease-in-out;
 }
 
-.homeTile:hover {
-  transform: translateY(-0.25rem);
-  box-shadow: 0 0.5rem 1.25rem rgba(34, 53, 72, 0.22);
+.serviceTile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(34, 53, 72, 0.18);
+  border-color: #0a6ed1;
+}
+
+.serviceTile .sapMGTTitle {
+  font-weight: 700;
+  color: #1d2d3e;
+}
+
+.serviceTile .sapMGTSubHdrTxt {
+  color: #5b738b;
+}
+
+.serviceTile .sapMGTHdrContent {
+  min-height: 5rem;
+}
+
+.serviceTile .sapMImageContentImageIcon {
+  color: #6a7d90 !important;
+}
+
+/* PROCESS */
+
+.processPanel {
+  margin-top: 3rem;
+  background: #ffffff;
+  border: 1px solid #d9e0e7;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.125rem 0.5rem rgba(34, 53, 72, 0.08);
+}
+
+.processPanelTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1d2d3e;
+}
+
+.processPanelSubtitle {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #5b738b;
+}
+
+.processFlow {
+  margin-top: 1.5rem;
+  gap: 1.25rem;
+}
+
+.processStep {
+  width: 210px;
+  min-height: 150px;
+  background: #fbfcfd;
+  border: 1px solid #e4e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  align-items: center;
+  text-align: center;
+}
+
+.processIcon {
+  font-size: 2rem;
+  color: #0a6ed1;
+}
+
+.processTitle {
+  margin-top: 0.75rem;
+  font-weight: 800;
+  color: #1d2d3e;
+}
+
+.processText {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #5b738b;
+  line-height: 1.4;
+}
+
+.processArrow {
+  color: #0a6ed1;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .heroOverlay {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .heroMainTitle {
+    font-size: 1.6rem;
+  }
+
+  .contentArea {
+    padding: 2rem 1rem;
+  }
+
+  .serviceTileGrid,
+  .processFlow {
+    flex-direction: column;
+  }
+
+  .serviceTile,
+  .processStep {
+    width: auto !important;
+  }
+
+  .processArrow {
+    display: none;
+  }
 }

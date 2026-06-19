@@ -1,4 +1,5 @@
-ID;employeeCode;fullName;status
-77777777-7777-7777-7777-777777777701;RH-001;Jean Dupont;AVAILABLE
-77777777-7777-7777-7777-777777777702;RH-002;Marie Martin;AVAILABLE
-77777777-7777-7777-7777-777777777703;RH-003;Paul Bernard;UNAVAILABLE
+ID,employeeCode,fullName,category_ID,status,createdAt,createdBy,modifiedAt,modifiedBy
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1,RH-001,Ahmed Benali,,AVAILABLE,,,,
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2,RH-002,Sara El Amrani,,AVAILABLE,,,,
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3,RH-003,Youssef Louzi,,RESERVED,,,,
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4,RH-004,Nadia Karim,,UNAVAILABLE,,,,

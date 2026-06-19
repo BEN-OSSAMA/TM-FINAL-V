@@ -1,4 +1,5 @@
-ID;equipmentCode;name;status
-88888888-8888-8888-8888-888888888801;EQ-001;Benne 10 m³;AVAILABLE
-88888888-8888-8888-8888-888888888802;EQ-002;Compacteur;AVAILABLE
-88888888-8888-8888-8888-888888888803;EQ-003;Conteneur DASRI;UNAVAILABLE
+ID,equipmentCode,name,category_ID,status,createdAt,createdBy,modifiedAt,modifiedBy
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1,EQ-001,Camion benne 12T,,AVAILABLE,,,,
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2,EQ-002,Camion compacteur,,AVAILABLE,,,,
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3,EQ-003,Benne mobile,,RESERVED,,,,
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4,EQ-004,Conteneur spécial,,UNAVAILABLE,,,,

@@ -1,0 +1,78 @@
+/* ===================================================== */
+/* Bouton Valider - vert                                 */
+/* ===================================================== */
+
+button[id*="ValidateSelectedTour"] .sapMBtnInner,
+button[id*="ValidateTourObjectPage"] .sapMBtnInner {
+  background-color: #107e3e !important;
+  border-color: #107e3e !important;
+  color: #ffffff !important;
+}
+
+button[id*="ValidateSelectedTour"] .sapMBtnContent,
+button[id*="ValidateTourObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+}
+
+/* ===================================================== */
+/* Bouton Rejeter - rouge                                */
+/* ===================================================== */
+
+button[id*="RejectSelectedTour"] .sapMBtnInner,
+button[id*="RejectTourObjectPage"] .sapMBtnInner {
+  background-color: #bb0000 !important;
+  border-color: #bb0000 !important;
+  color: #ffffff !important;
+}
+
+button[id*="RejectSelectedTour"] .sapMBtnContent,
+button[id*="RejectTourObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+}
+
+/* ===================================================== */
+/* Effet hover                                           */
+/* ===================================================== */
+
+button[id*="ValidateSelectedTour"]:hover .sapMBtnInner,
+button[id*="ValidateTourObjectPage"]:hover .sapMBtnInner {
+  background-color: #0b6b35 !important;
+  border-color: #0b6b35 !important;
+}
+
+button[id*="RejectSelectedTour"]:hover .sapMBtnInner,
+button[id*="RejectTourObjectPage"]:hover .sapMBtnInner {
+  background-color: #970000 !important;
+  border-color: #970000 !important;
+}
+
+/* ===================================================== */
+/* Boutons Retour - même style que Go                    */
+/* ===================================================== */
+
+button[id*="RetourSupervisorDashboard"] .sapMBtnInner,
+button[id*="BackObjectPage"] .sapMBtnInner,
+button[id*="RetourDashboardList"] .sapMBtnInner,
+button[id*="RetourBackObjectPage"] .sapMBtnInner {
+  background-color: #0a6ed1 !important;
+  border-color: #0a6ed1 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RetourSupervisorDashboard"] .sapMBtnContent,
+button[id*="BackObjectPage"] .sapMBtnContent,
+button[id*="RetourDashboardList"] .sapMBtnContent,
+button[id*="RetourBackObjectPage"] .sapMBtnContent {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+button[id*="RetourSupervisorDashboard"]:hover .sapMBtnInner,
+button[id*="BackObjectPage"]:hover .sapMBtnInner,
+button[id*="RetourDashboardList"]:hover .sapMBtnInner,
+button[id*="RetourBackObjectPage"]:hover .sapMBtnInner {
+  background-color: #085caf !important;
+  border-color: #085caf !important;
+}

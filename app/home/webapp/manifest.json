@@ -1,10 +1,10 @@
 {
   "_version": "1.49.0",
   "sap.app": {
-    "id": "sepur.home",
+    "id": "home",
     "type": "application",
     "i18n": "i18n/i18n.properties",
-    "title": "SEPUR Tours Management Overview",
+    "title": "SEPUR Tours Management",
     "description": "Page d'accueil centrale SEPUR",
     "applicationVersion": {
       "version": "1.0.0"
@@ -19,7 +19,7 @@
     }
   },
   "sap.ui5": {
-    "flexEnabled": true,
+    "flexEnabled": false,
     "dependencies": {
       "minUI5Version": "1.120.0",
       "libs": {
@@ -34,16 +34,16 @@
       "cozy": true
     },
     "rootView": {
-      "viewName": "sepur.home.view.home",
+      "viewName": "home.view.App",
       "type": "XML",
-      "id": "homeView",
+      "id": "homeAppView",
       "async": true
     },
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "settings": {
-          "bundleName": "sepur.home.i18n.i18n"
+          "bundleName": "home.i18n.i18n"
         }
       }
     },

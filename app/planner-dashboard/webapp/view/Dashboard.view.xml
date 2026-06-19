@@ -2,6 +2,9 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
     controllerName="sepur.planner.controller.Dashboard"
     displayBlock="true">
 
@@ -20,52 +23,34 @@
                                 class="sepurLogo"
                                 decorative="false"
                                 alt="SEPUR" />
+
+                            <!-- <Text text="Planification" class="brandSubtitle" /> -->
                         </VBox>
 
                         <VBox class="menuArea">
                             <Button
-                                id="btnMenuDashboard"
                                 text="Dashboard"
                                 icon="sap-icon://business-objects-experience"
                                 class="menuButton activeMenu"
-                                press=".onNavigateSection">
-                                <customData>
-                                    <core:CustomData key="section" value="dashboard" writeToDom="false" />
-                                </customData>
-                            </Button>
+                                press=".onRefresh" />
 
                             <Button
-                                id="btnMenuTours"
                                 text="Tournées"
                                 icon="sap-icon://map"
                                 class="menuButton"
-                                press=".onNavigateSection">
-                                <customData>
-                                    <core:CustomData key="section" value="tours" writeToDom="false" />
-                                </customData>
-                            </Button>
+                                press=".onOpenTours" />
 
                             <Button
-                                id="btnMenuRoadmaps"
                                 text="Roadmaps"
                                 icon="sap-icon://journey-arrive"
                                 class="menuButton"
-                                press=".onNavigateSection">
-                                <customData>
-                                    <core:CustomData key="section" value="roadmaps" writeToDom="false" />
-                                </customData>
-                            </Button>
+                                press=".onOpenRoadmaps" />
 
                             <Button
-                                id="btnMenuRejectedTours"
                                 text="Tournées rejetées"
                                 icon="sap-icon://decline"
                                 class="menuButton"
-                                press=".onNavigateSection">
-                                <customData>
-                                    <core:CustomData key="section" value="rejectedTours" writeToDom="false" />
-                                </customData>
-                            </Button>
+                                press=".onOpenRejectedTours" />
 
                             <Button
                                 text="Accueil"
@@ -105,6 +90,7 @@
 
                             <HBox alignItems="Center" class="topActions">
 
+
                                 <Button
                                     id="btnPlannerNotifications"
                                     icon="sap-icon://bell"
@@ -129,17 +115,262 @@
 
                         </HBox>
 
-                        <!-- BODY SCROLLABLE — contenu dynamique -->
-                        <ScrollContainer
-                            id="mainScroll"
-                            class="dashboardScroll"
-                            vertical="true"
-                            horizontal="false"
-                            height="100%">
+                        <!-- BODY SCROLLABLE -->
+                        <VBox class="dashboardBody">
 
-                            <VBox id="dynamicContent" class="dynamicContentArea dashboardBody" />
+                            <!-- <VBox class="sectionHeader">
+                                <Title text="Indicateurs clés" level="H3" class="sectionTitle" />
+                                <Text text="Vue rapide des volumes et statuts opérationnels" class="sectionSubtitle" />
+                            </VBox> -->
 
-                        </ScrollContainer>
+                            <!-- KPI CARDS -->
+                            <FlexBox
+    id="kpiGrid"
+    class="kpiGridProfessional"
+    wrap="Wrap"
+    justifyContent="Start"
+    alignItems="Start">
+
+    <GenericTile
+        header="Total tournées"
+        subheader="Toutes les tournées enregistrées"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenTours">
+        <tileContent>
+            <TileContent footer="Tournées">
+                <NumericContent
+                    value="{/stats/totalTours}"
+                    icon="sap-icon://map"
+                    valueColor="Neutral"
+                    indicator="None"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Tournées créées"
+        subheader="En attente de traitement"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenTours">
+        <tileContent>
+            <TileContent footer="À suivre">
+                <NumericContent
+                    value="{/stats/createdTours}"
+                    icon="sap-icon://pending"
+                    valueColor="Critical"
+                    indicator="None"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Tournées validées"
+        subheader="Acceptées par le superviseur"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenTours">
+        <tileContent>
+            <TileContent footer="Validées">
+                <NumericContent
+                    value="{/stats/validatedTours}"
+                    icon="sap-icon://accept"
+                    valueColor="Good"
+                    indicator="Up"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Tournées rejetées"
+        subheader="Correction nécessaire"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenRejectedTours">
+        <tileContent>
+            <TileContent footer="À corriger">
+                <NumericContent
+                    value="{/stats/rejectedTours}"
+                    icon="sap-icon://message-error"
+                    valueColor="Error"
+                    indicator="Down"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Total roadmaps"
+        subheader="Roadmaps disponibles"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenRoadmaps">
+        <tileContent>
+            <TileContent footer="Roadmaps">
+                <NumericContent
+                    value="{/stats/totalRoadmaps}"
+                    icon="sap-icon://journey-arrive"
+                    valueColor="Neutral"
+                    indicator="None"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Roadmaps créées"
+        subheader="En attente de traitement"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenRoadmaps">
+        <tileContent>
+            <TileContent footer="À traiter">
+                <NumericContent
+                    value="{/stats/createdRoadmaps}"
+                    icon="sap-icon://pending"
+                    valueColor="Critical"
+                    indicator="None"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Roadmaps validées"
+        subheader="Acceptées par le superviseur"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenRoadmaps">
+        <tileContent>
+            <TileContent footer="Validées">
+                <NumericContent
+                    value="{/stats/validatedRoadmaps}"
+                    icon="sap-icon://accept"
+                    valueColor="Good"
+                    indicator="Up"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+    <GenericTile
+        header="Roadmaps rejetées"
+        subheader="Correction nécessaire"
+        frameType="TwoByOne"
+        class="sapKpiTile"
+        press=".onOpenRejectedTours">
+        <tileContent>
+            <TileContent footer="À corriger">
+                <NumericContent
+                    value="{/stats/rejectedRoadmaps}"
+                    icon="sap-icon://message-error"
+                    valueColor="Error"
+                    indicator="Down"
+                    withMargin="false" />
+            </TileContent>
+        </tileContent>
+    </GenericTile>
+
+</FlexBox>
+
+                            <!-- CHARTS -->
+                            <HBox class="chartsRow" wrap="Wrap">
+
+                                <VBox class="chartCard">
+                                    <HBox class="cardHeader" justifyContent="SpaceBetween" alignItems="Center">
+                                        <HBox alignItems="Center">
+                                            <VBox class="cardIconBox">
+                                                <core:Icon src="sap-icon://donut-chart" class="cardHeaderIcon" />
+                                            </VBox>
+                                            <VBox>
+                                                <Title text="Statistiques des tournées" level="H4" class="cardTitle" />
+                                                <Text text="Répartition par statut" class="mutedText" />
+                                            </VBox>
+                                        </HBox>
+
+                                        <Button
+                                            icon="sap-icon://refresh"
+                                            type="Transparent"
+                                            press=".onRefresh"
+                                            tooltip="Actualiser" />
+                                    </HBox>
+
+                                    <viz:VizFrame
+                                        id="tourStatusChart"
+                                        uiConfig="{applicationSet:'fiori'}"
+                                        vizType="donut"
+                                        width="100%"
+                                        height="300px">
+
+                                        <viz:dataset>
+                                            <viz.data:FlattenedDataset data="{/tourChartData}">
+                                                <viz.data:dimensions>
+                                                    <viz.data:DimensionDefinition name="Statut" value="{status}" />
+                                                </viz.data:dimensions>
+                                                <viz.data:measures>
+                                                    <viz.data:MeasureDefinition name="Nombre" value="{total}" />
+                                                </viz.data:measures>
+                                            </viz.data:FlattenedDataset>
+                                        </viz:dataset>
+
+                                        <viz:feeds>
+                                            <viz.feeds:FeedItem uid="size" type="Measure" values="Nombre" />
+                                            <viz.feeds:FeedItem uid="color" type="Dimension" values="Statut" />
+                                        </viz:feeds>
+                                    </viz:VizFrame>
+                                </VBox>
+
+                                <VBox class="chartCard">
+                                    <HBox class="cardHeader" justifyContent="SpaceBetween" alignItems="Center">
+                                        <HBox alignItems="Center">
+                                            <VBox class="cardIconBox">
+                                                <core:Icon src="sap-icon://bar-chart" class="cardHeaderIcon" />
+                                            </VBox>
+                                            <VBox>
+                                                <Title text="Statistiques des roadmaps" level="H4" class="cardTitle" />
+                                                <Text text="Répartition par statut" class="mutedText" />
+                                            </VBox>
+                                        </HBox>
+
+                                        <Button
+                                            icon="sap-icon://refresh"
+                                            type="Transparent"
+                                            press=".onRefresh"
+                                            tooltip="Actualiser" />
+                                    </HBox>
+
+                                    <viz:VizFrame
+                                        id="roadmapStatusChart"
+                                        uiConfig="{applicationSet:'fiori'}"
+                                        vizType="column"
+                                        width="100%"
+                                        height="300px">
+
+                                        <viz:dataset>
+                                            <viz.data:FlattenedDataset data="{/roadmapChartData}">
+                                                <viz.data:dimensions>
+                                                    <viz.data:DimensionDefinition name="Statut" value="{status}" />
+                                                </viz.data:dimensions>
+                                                <viz.data:measures>
+                                                    <viz.data:MeasureDefinition name="Nombre" value="{total}" />
+                                                </viz.data:measures>
+                                            </viz.data:FlattenedDataset>
+                                        </viz:dataset>
+
+                                        <viz:feeds>
+                                            <viz.feeds:FeedItem uid="valueAxis" type="Measure" values="Nombre" />
+                                            <viz.feeds:FeedItem uid="categoryAxis" type="Dimension" values="Statut" />
+                                        </viz:feeds>
+                                    </viz:VizFrame>
+                                </VBox>
+
+                            </HBox>
+
+                        </VBox>
 
                     </VBox>
 

@@ -1,95 +1,289 @@
 <mvc:View
-    controllerName="sepur.home.controller.home"
+    controllerName="home.controller.home"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
 
-    <Page showHeader="false" class="homePage">
-        <content>
-            <VBox width="100%">
+    <Page showHeader="false" class="sepurLaunchpadPage">
 
-                <Toolbar class="homeTopBar">
-                    <Button icon="sap-icon://menu2" type="Transparent"/>
+        <VBox class="launchpadShell">
 
+            <!-- HEADER SAP STYLE -->
+            <HBox class="sapTopHeader" alignItems="Center" justifyContent="SpaceBetween">
+
+                <HBox alignItems="Center" class="headerLeft">
+                    <Button icon="sap-icon://menu2" type="Transparent" class="headerIconButton"/>
                     <Image
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/1280px-SAP_2011_logo.svg.png"
-                        class="sapLogo"/>
+                        src="https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg"
+                        class="sapLogoImage"/>
+                    <Text text="SEPUR Waste Management Overview" class="headerTitle"/>
+                </HBox>
 
-                    <MenuButton
-                        text="{home>/title}"
+                <HBox alignItems="Center" class="headerRight">
+                    <Button
+                        text="Se connecter"
+                        icon="sap-icon://employee"
+                        type="Emphasized"
+                        visible="{= !${home>/isLoggedIn} }"
+                        press=".onLogin"/>
+
+                    <Button
+                        text="{home>/userDisplayName}"
+                        icon="sap-icon://customer"
                         type="Transparent"
-                        class="homeTitleButton">
-                        <menu>
-                            <Menu>
-                                <MenuItem text="Dashboard Superviseur" icon="sap-icon://business-objects-experience"/>
-                                <MenuItem text="Tournées à valider" icon="sap-icon://map"/>
-                                <MenuItem text="Roadmaps à valider" icon="sap-icon://journey-arrive"/>
-                                <MenuItem text="Analytics and Reporting" icon="sap-icon://business-objects-explorer"/>
-                                <MenuItem text="Settings and Configuration" icon="sap-icon://action-settings"/>
-                            </Menu>
-                        </menu>
-                    </MenuButton>
+                        visible="{home>/isLoggedIn}"
+                        press=".onProfileMenu"
+                        class="profileButton"/>
 
-                    <ToolbarSpacer/>
+                    <Button icon="sap-icon://bell" type="Transparent" class="headerIconButton"/>
+                    <Button icon="sap-icon://sys-help" type="Transparent" class="headerIconButton"/>
 
-                    <Button text="{home>/roleLabel}" type="Emphasized"/>
-                    <Button icon="sap-icon://bell" type="Transparent"/>
-                    <Button icon="sap-icon://person-placeholder" type="Transparent"/>
-                    <Button icon="sap-icon://log" type="Transparent" press=".onLogout"/>
-                </Toolbar>
+                    <Button
+                        icon="sap-icon://grid"
+                        type="Transparent"
+                        class="headerIconButton appMenuButton"
+                        press=".onOpenAppMenu"/>
+                </HBox>
 
-                <VBox class="heroSection">
-                    <items>
-                        <Text text="Welcome to SEPUR Tours Management" class="heroTitle"/>
-                    </items>
+            </HBox>
+
+            <!-- HERO CAROUSEL -->
+            <Carousel
+                id="heroCarousel"
+                height="340px"
+                loop="true"
+                showPageIndicator="true"
+                class="heroCarousel">
+
+                <VBox class="heroSlide heroSlideOne">
+                    <VBox class="heroOverlay">
+                        <Text text="Welcome to SEPUR Waste Management" class="heroMainTitle"/>
+                        <Text
+                            text="Pilotez le cycle complet de gestion des déchets : planification des tournées, validation superviseur, génération des feuilles de route et préparation SAP S/4HANA."
+                            class="heroMainDescription"/>
+
+                        <HBox class="heroActions">
+                            <Button text="Espace planification" icon="sap-icon://calendar" type="Emphasized" press=".onOpenPlanning"/>
+                            <Button text="Espace supervision" icon="sap-icon://manager-insight" press=".onOpenSupervisor"/>
+                        </HBox>
+                    </VBox>
                 </VBox>
 
-                <VBox class="homeContent">
-                    <items>
-                        <HBox class="welcomePanel" justifyContent="SpaceBetween" alignItems="Center">
-                            <items>
-                                <VBox>
-                                    <items>
-                                        <Text text="ESPACE CENTRALISÉ" class="sectionLabel"/>
-                                        <Title text="{home>/welcomeTitle}" level="H2"/>
-                                        <Text text="{home>/welcomeSubtitle}" class="welcomeSubtitle"/>
-                                    </items>
-                                </VBox>
+                <VBox class="heroSlide heroSlideTwo">
+                    <VBox class="heroOverlay">
+                        <Text text="Planification intelligente des collectes" class="heroMainTitle"/>
+                        <Text
+                            text="Le planificateur crée les tournées, choisit les clients, les dates, les quantités, les ressources et génère les feuilles de route par période."
+                            class="heroMainDescription"/>
 
-                                <Avatar initials="{home>/initials}" displaySize="L"/>
-                            </items>
+                        <HBox class="heroActions">
+                            <Button text="Management des tournées" icon="sap-icon://shipping-status" type="Emphasized" press=".onTours"/>
+                            <Button text="Roadmaps" icon="sap-icon://map-3" press=".onRoadmaps"/>
                         </HBox>
+                    </VBox>
+                </VBox>
 
-                        <FlexBox
-                            class="tileContainer"
-                            wrap="Wrap"
-                            items="{home>/tiles}">
+                <VBox class="heroSlide heroSlideThree">
+                    <VBox class="heroOverlay">
+                        <Text text="Supervision et contrôle métier" class="heroMainTitle"/>
+                        <Text
+                            text="Le superviseur contrôle les tournées et les feuilles de route, valide les éléments conformes ou rejette avec motif pour correction."
+                            class="heroMainDescription"/>
 
-                            <items>
-                                <GenericTile
-                                    class="homeTile"
-                                    header="{home>title}"
-                                    subheader="{home>subTitle}"
-                                    press=".onTilePress">
+                        <HBox class="heroActions">
+                            <Button text="Validation des tournées" icon="sap-icon://validate" type="Emphasized" press=".onSupervisorTours"/>
+                            <Button text="Validation des roadmaps" icon="sap-icon://map-3" press=".onSupervisorRoadmaps"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
 
-                                    <customData>
-                                        <core:CustomData key="target" value="{home>target}"/>
-                                    </customData>
+            </Carousel>
 
-                                    <tileContent>
-                                        <TileContent>
-                                            <content>
-                                                <ImageContent src="{home>icon}"/>
-                                            </content>
-                                        </TileContent>
-                                    </tileContent>
-                                </GenericTile>
-                            </items>
-                        </FlexBox>
-                    </items>
+            <!-- CONTENT -->
+            <VBox class="contentArea">
+
+                <Text text="End-to-End Waste Collection Processing" class="sectionTitle"/>
+                <Text
+                    text="Services métier disponibles pour gérer le processus complet de collecte SEPUR."
+                    class="sectionSubtitle"/>
+
+                <!-- SERVICE TILES -->
+                <HBox class="serviceTileGrid">
+
+                    <GenericTile
+                        header="Espace planification"
+                        subheader="Dashboard planificateur"
+                        class="serviceTile"
+                        visible="{home>/showPlanningServices}"
+                        press=".onOpenPlanning">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://calendar"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Management des tournées"
+                        subheader="Créer et modifier les tournées"
+                        class="serviceTile"
+                        visible="{home>/showPlanningServices}"
+                        press=".onTours">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://shipping-status"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Management des roadmaps"
+                        subheader="Créer les feuilles de route"
+                        class="serviceTile"
+                        visible="{home>/showPlanningServices}"
+                        press=".onRoadmaps">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://map-3"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Espace supervision"
+                        subheader="Dashboard superviseur"
+                        class="serviceTile"
+                        visible="{home>/showSupervisorServices}"
+                        press=".onOpenSupervisor">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://manager-insight"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Validation des tournées"
+                        subheader="Valider ou rejeter les tournées"
+                        class="serviceTile"
+                        visible="{home>/showSupervisorServices}"
+                        press=".onSupervisorTours">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://validate"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Validation des roadmaps"
+                        subheader="Valider les feuilles de route"
+                        class="serviceTile"
+                        visible="{home>/showSupervisorServices}"
+                        press=".onSupervisorRoadmaps">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://map-3"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Monitoring opérationnel"
+                        subheader="Suivi global du processus"
+                        class="serviceTile"
+                        visible="{home>/showCommonServices}">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://business-objects-experience"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="Préparation SAP S/4HANA"
+                        subheader="Données prêtes pour CPI"
+                        class="serviceTile"
+                        visible="{home>/showCommonServices}">
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <ImageContent src="sap-icon://chain-link"/>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                </HBox>
+
+                <!-- PROCESS FLOW -->
+                <VBox class="processPanel">
+
+                    <HBox justifyContent="SpaceBetween" alignItems="Center">
+                        <VBox>
+                            <Text text="Processus métier digitalisé" class="processPanelTitle"/>
+                            <Text text="Vue synthétique du flux end-to-end." class="processPanelSubtitle"/>
+                        </VBox>
+
+                        <ObjectStatus
+                            text="{home>/roleLabel}"
+                            state="{home>/roleState}"/>
+                    </HBox>
+
+                    <HBox class="processFlow" alignItems="Center">
+
+                        <VBox class="processStep">
+                            <core:Icon src="sap-icon://shipping-status" class="processIcon"/>
+                            <Text text="Tournées" class="processTitle"/>
+                            <Text text="Création des demandes de collecte" class="processText"/>
+                        </VBox>
+
+                        <Text text="→" class="processArrow"/>
+
+                        <VBox class="processStep">
+                            <core:Icon src="sap-icon://manager-insight" class="processIcon"/>
+                            <Text text="Validation" class="processTitle"/>
+                            <Text text="Contrôle superviseur" class="processText"/>
+                        </VBox>
+
+                        <Text text="→" class="processArrow"/>
+
+                        <VBox class="processStep">
+                            <core:Icon src="sap-icon://map-3" class="processIcon"/>
+                            <Text text="Roadmaps" class="processTitle"/>
+                            <Text text="Regroupement par client et période" class="processText"/>
+                        </VBox>
+
+                        <Text text="→" class="processArrow"/>
+
+                        <VBox class="processStep">
+                            <core:Icon src="sap-icon://database" class="processIcon"/>
+                            <Text text="SAP S/4HANA" class="processTitle"/>
+                            <Text text="Préparation de l’intégration" class="processText"/>
+                        </VBox>
+
+                    </HBox>
+
                 </VBox>
 
             </VBox>
-        </content>
+
+        </VBox>
+
     </Page>
+
 </mvc:View>

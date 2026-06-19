@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Unit Tests - Supervisor Roadmaps</title>
+
+    <script
+        id="sap-ui-bootstrap"
+        src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-async="true"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-resourceroots='{
+            "sepur.supervisor.supervisorroadmaps": "../../"
+        }'>
+    </script>
+
+    <link rel="stylesheet" href="https://sapui5.hana.ondemand.com/resources/sap/ui/thirdparty/qunit-2.css">
+    <script src="https://sapui5.hana.ondemand.com/resources/sap/ui/thirdparty/qunit-2.js"></script>
+    <script src="https://sapui5.hana.ondemand.com/resources/sap/ui/qunit/qunit-junit.js"></script>
+    <script src="https://sapui5.hana.ondemand.com/resources/sap/ui/qunit/qunit-coverage.js"></script>
+
+    <script>
+        QUnit.config.autostart = false;
+
+        sap.ui.getCore().attachInit(function () {
+            sap.ui.require([
+                "sepur/supervisor/supervisorroadmaps/test/unit/allTests"
+            ], function () {
+                QUnit.start();
+            }, function (oError) {
+                console.error("Erreur chargement tests QUnit :", oError);
+                QUnit.start();
+
+                QUnit.module("Erreur de chargement");
+                QUnit.test("Les tests Supervisor Roadmaps n'ont pas pu être chargés", function (assert) {
+                    assert.ok(false, oError && oError.message ? oError.message : "Erreur inconnue");
+                });
+            });
+        });
+    </script>
+</head>
+
+<body class="sapUiBody">
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+</body>
+</html>

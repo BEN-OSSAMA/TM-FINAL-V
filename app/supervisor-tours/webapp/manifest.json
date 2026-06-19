@@ -74,8 +74,12 @@
       }
     },
     "resources": {
-      "css": []
-    },
+  "css": [
+    {
+      "uri": "css/style.css"
+    }
+  ]
+},
     "routing": {
       "config": {},
       "routes": [
@@ -98,10 +102,23 @@
           "options": {
             "settings": {
               "contextPath": "/Tours",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "initialLoad": "Enabled",
+              "hideDraftToggle": true,
               "creationMode": {
                 "name": "Disabled"
+              },
+              "content": {
+                "header": {
+                  "actions": {
+                    "RetourSupervisorDashboard": {
+                      "text": "Retour au dashboard",
+                      "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onBackToDashboard",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
               },
               "navigation": {
                 "Tours": {
@@ -114,8 +131,8 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
-                    "selectionMode": "None",
-                    "selectAll": false,
+                    "selectionMode": "Multi",
+                    "selectAll": true,
                     "enableExport": true,
                     "personalization": {
                       "column": true,
@@ -123,6 +140,22 @@
                       "filter": true,
                       "group": true
                     }
+                  },
+                  "actions": {
+                    "ValidateTourObjectPage": {
+  "text": "Valider",
+  "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onValidateTour",
+  "visible": true,
+  "enabled": true,
+  "buttonType": "Accept"
+},
+"RejectTourObjectPage": {
+  "text": "Rejeter",
+  "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onRejectTour",
+  "visible": true,
+  "enabled": true,
+  "buttonType": "Reject"
+}
                   }
                 }
               }
@@ -138,7 +171,31 @@
               "contextPath": "/Tours",
               "editableHeaderContent": false,
               "showRelatedApps": false,
-              "sectionLayout": "Page"
+              "sectionLayout": "Page",
+              "content": {
+                "header": {
+                  "actions": {
+                    "ValidateTourObjectPage": {
+                      "text": "Valider",
+                      "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onValidateTour",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "RejectTourObjectPage": {
+                      "text": "Rejeter",
+                      "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onRejectTour",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "BackObjectPage": {
+                      "text": "Retour",
+                      "press": "sepur.supervisor.supervisortours.ext.controller.SupervisorTourActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
             }
           }
         }

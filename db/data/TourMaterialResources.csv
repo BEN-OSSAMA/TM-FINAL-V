@@ -1,0 +1,4 @@
+ID,sequence,usage,note,tour_ID,materialResource_ID,createdAt,createdBy,modifiedAt,modifiedBy
+eeeeeeee-eeee-eeee-eeee-eeeeeeeeee01,1,Véhicule principal,Camion affecté,66666666-6666-6666-6666-666666666601,bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1,,,,
+eeeeeeee-eeee-eeee-eeee-eeeeeeeeee02,2,Équipement complémentaire,Support matériel,66666666-6666-6666-6666-666666666601,bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2,,,,
+eeeeeeee-eeee-eeee-eeee-eeeeeeeeee03,1,Véhicule principal,Camion affecté,66666666-6666-6666-6666-666666666602,bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2,,,,

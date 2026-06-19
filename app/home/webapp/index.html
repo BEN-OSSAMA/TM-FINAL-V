@@ -1,35 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>SEPUR Tours Management Overview</title>
-    <style>
-        html, body, body > div, #container, #container-uiarea {
-            height: 100%;
-        }
-    </style>
+    <title>SEPUR Tours Management</title>
+
     <script
         id="sap-ui-bootstrap"
-        src="resources/sap-ui-core.js"
+        src="https://sapui5.hana.ondemand.com/1.148.1/resources/sap-ui-core.js"
         data-sap-ui-theme="sap_horizon"
-        data-sap-ui-resource-roots='{
-            "sepur.home": "./"
-        }'
-        data-sap-ui-on-init="module:sap/ui/core/ComponentSupport"
-        data-sap-ui-compat-version="edge"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-compatVersion="edge"
         data-sap-ui-async="true"
-        data-sap-ui-frame-options="trusted"
-    ></script>
+        data-sap-ui-frameOptions="trusted"
+        data-sap-ui-resourceroots='{
+            "home": "./"
+        }'
+        data-sap-ui-oninit="module:sap/ui/core/ComponentSupport">
+    </script>
 </head>
+
 <body class="sapUiBody sapUiSizeCompact" id="content">
     <div
         data-sap-ui-component
-        data-name="sepur.home"
+        data-name="home"
         data-id="container"
-        data-settings='{"id" : "sepur.home"}'
-        data-handle-validation="true"
-    ></div>
+        data-settings='{"id":"home"}'>
+    </div>
 </body>
 </html>

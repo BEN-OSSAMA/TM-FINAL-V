@@ -16,6 +16,7 @@
   "scripts": {
     "start": "cds-serve",
     "watch": "cds watch",
+    "generate:unit-tests": "node tools/generate-ui5-unit-tests.js",
     "watch-login": "cds watch --open sepur.login/index.html?sap-ui-xx-viewCache=false --livereload false",
     "watch-tours": "cds watch --open ns.tours/index.html?sap-ui-xx-viewCache=false --livereload false",
     "watch-roadmaps": "cds watch --open ns.roadmaps/index.html?sap-ui-xx-viewCache=false --livereload false",
@@ -44,8 +45,7 @@
     "requires": {
       "[development]": {
         "db": {
-          "kind": "sqlite",
-          "data": []
+          "kind": "sqlite"
         },
         "auth": {
           "kind": "dummy"

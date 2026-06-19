@@ -7,8 +7,8 @@
     "applicationVersion": {
       "version": "0.0.1"
     },
-    "title": "Roadmaps",
-    "description": "Application de gestion des roadmaps",
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
     "resources": "resources.json",
     "dataSources": {
       "mainService": {
@@ -74,7 +74,11 @@
       }
     },
     "resources": {
-      "css": []
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
     },
     "routing": {
       "config": {},
@@ -98,11 +102,9 @@
           "options": {
             "settings": {
               "contextPath": "/Roadmaps",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "initialLoad": "Enabled",
-              "filterSettings": {
-                "initialLoad": true
-              },
+              "hideDraftToggle": true,
               "navigation": {
                 "Roadmaps": {
                   "detail": {
@@ -110,11 +112,24 @@
                   }
                 }
               },
+              "content": {
+                "header": {
+                  "actions": {
+                    "RetourDashboardList": {
+                      "text": "Retour au dashboard",
+                      "press": "ns.roadmaps.ext.controller.RoadmapActions.onBackToDashboard",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
-                    "selectionMode": "None",
+                    "selectionMode": "Multi",
+                    "selectAll": true,
                     "enableExport": true,
                     "personalization": {
                       "column": true,
@@ -137,7 +152,31 @@
               "contextPath": "/Roadmaps",
               "editableHeaderContent": false,
               "showRelatedApps": false,
-              "sectionLayout": "Page"
+              "sectionLayout": "Page",
+              "content": {
+                "header": {
+                  "actions": {
+                    "AutoAssignTours": {
+                      "text": "Affecter les tournées",
+                      "press": "ns.roadmaps.ext.controller.RoadmapActions.onAutoAssignTours",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "GenerateRoadmapSheet": {
+                      "text": "Générer feuille de route",
+                      "press": "ns.roadmaps.ext.controller.RoadmapActions.onGenerateRoadmapSheet",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "RetourBackObjectPage": {
+                      "text": "Retour",
+                      "press": "ns.roadmaps.ext.controller.RoadmapActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
             }
           }
         }

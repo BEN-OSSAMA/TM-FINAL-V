@@ -10,11 +10,6 @@
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
     "resources": "resources.json",
-    "sourceTemplate": {
-      "id": "@sap/generator-fiori:lrop",
-      "version": "1.25.0",
-      "toolsId": "88ee5a63-b5af-420d-9031-5e40ae9aa8a7"
-    },
     "dataSources": {
       "mainService": {
         "uri": "/odata/v4/route-management/",
@@ -69,7 +64,8 @@
         "settings": {
           "operationMode": "Server",
           "autoExpandSelect": true,
-          "earlyRequests": true
+          "earlyRequests": true,
+          "synchronizationMode": "None"
         }
       },
       "@i18n": {
@@ -78,57 +74,128 @@
       }
     },
     "resources": {
-      "css": []
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
     },
     "routing": {
       "config": {},
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "RoadmapsList",
-          "target": "RoadmapsList"
+          "name": "SupervisorRoadmapsList",
+          "target": "SupervisorRoadmapsList"
         },
         {
           "pattern": "Roadmaps({key}):?query:",
-          "name": "RoadmapsObjectPage",
-          "target": "RoadmapsObjectPage"
+          "name": "SupervisorRoadmapsObjectPage",
+          "target": "SupervisorRoadmapsObjectPage"
         }
       ],
       "targets": {
-        "RoadmapsList": {
+        "SupervisorRoadmapsList": {
           "type": "Component",
-          "id": "RoadmapsList",
+          "id": "SupervisorRoadmapsList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
               "contextPath": "/Roadmaps",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "initialLoad": "Enabled",
+              "hideDraftToggle": true,
+              "creationMode": {
+                "name": "Disabled"
+              },
+              "content": {
+                "header": {
+                  "actions": {
+                    "RetourSupervisorDashboard": {
+                      "text": "Retour au dashboard",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onBackToDashboard",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              },
               "navigation": {
                 "Roadmaps": {
                   "detail": {
-                    "route": "RoadmapsObjectPage"
+                    "route": "SupervisorRoadmapsObjectPage"
                   }
                 }
               },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "type": "ResponsiveTable"
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Multi",
+                    "selectAll": true,
+                    "enableExport": true,
+                    "personalization": {
+                      "column": true,
+                      "sort": true,
+                      "filter": true,
+                      "group": true
+                    }
+                  },
+                  "actions": {
+                    "ValidateSelectedRoadmap": {
+                      "text": "Valider",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onValidateRoadmap",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": true
+                    },
+                    "RejectSelectedRoadmap": {
+                      "text": "Rejeter",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onRejectRoadmap",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": true
+                    }
                   }
                 }
               }
             }
           }
         },
-        "RoadmapsObjectPage": {
+        "SupervisorRoadmapsObjectPage": {
           "type": "Component",
-          "id": "RoadmapsObjectPage",
+          "id": "SupervisorRoadmapsObjectPage",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
+              "contextPath": "/Roadmaps",
               "editableHeaderContent": false,
-              "contextPath": "/Roadmaps"
+              "showRelatedApps": false,
+              "sectionLayout": "Page",
+              "content": {
+                "header": {
+                  "actions": {
+                    "ValidateRoadmapObjectPage": {
+                      "text": "Valider",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onValidateRoadmap",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "RejectRoadmapObjectPage": {
+                      "text": "Rejeter",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onRejectRoadmap",
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "BackObjectPage": {
+                      "text": "Retour",
+                      "press": "sepur.supervisor.supervisorroadmaps.ext.controller.SupervisorRoadmapActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -142,6 +209,9 @@
   "sap.fe": {
     "app": {
       "enableLazyLoading": true
+    },
+    "macros": {
+      "table": {}
     }
   }
 }

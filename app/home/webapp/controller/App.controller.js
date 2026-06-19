@@ -3,5 +3,7 @@ sap.ui.define([
 ], function (Controller) {
   "use strict";
 
-  return Controller.extend("sepur.home.controller.App", {});
+  return Controller.extend("home.controller.App", {
+    onInit: function () {}
+  });
 });

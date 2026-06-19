@@ -16,43 +16,13 @@ service RouteManagementService {
 
     entity CollectionPoints as projection on db.CollectionPoints;
 
-    entity Materials as projection on db.Materials;
-
-    @cds.redirection.target
-    entity HumanResources as projection on db.HumanResources;
-
-    @cds.redirection.target
-    entity MaterialResources as projection on db.MaterialResources;
-
-    @readonly
-    entity AvailableHumanResources as projection on db.AvailableHumanResources;
-
-    @readonly
-    entity AvailableMaterialResources as projection on db.AvailableMaterialResources;
-
     entity TourCollectionPoints as projection on db.TourCollectionPoints;
-
-    entity TourHumanResources as projection on db.TourHumanResources {
-        *,
-        humanResource.fullName as humanResourceName : String,
-        driver.lastName        as driverLastName      : String
-    };
-
-    entity TourMaterialResources as projection on db.TourMaterialResources {
-        *,
-        materialResource.name              as materialResourceName : String,
-        vehicle.registrationNumber         as vehicleRegistration  : String
-    };
 
     @odata.draft.enabled
     @cds.redirection.target: true
     entity Tours as projection on db.Tours {
         *,
-        tourCode                     as tourNumber          : String,
-        tourDate                     as collectionDate      : Date,
         client.name                  as clientName          : String,
-        material.description         as materialName        : String,
-        material.materialCode        as materialCode        : String,
         vehicle.registrationNumber   as vehicleRegistration : String,
         driver.firstName             as driverFirstName     : String,
         driver.lastName              as driverLastName      : String,
@@ -60,21 +30,17 @@ service RouteManagementService {
 
         virtual statusCriticality    : Integer,
         virtual canValidate          : Boolean,
-        virtual canReject            : Boolean,
-        virtual humanResourcesLabel  : String,
-        virtual materialResourcesLabel : String
+        virtual canReject            : Boolean
     }
     actions {
         action validate() returns Tours;
-        action rejectTour(reason : String) returns Tours;
+        action reject(reason : String) returns Tours;
     };
 
     @odata.draft.enabled
     @cds.redirection.target: true
     entity Roadmaps as projection on db.Roadmaps {
         *,
-        client.name                     as clientName               : String,
-        client.code                     as clientCode               : String,
         tour.tourCode                   as tourCode                 : String,
         tour.tourDate                   as tourDate                 : Date,
         tour.zone                       as tourZone                 : String,
@@ -86,12 +52,13 @@ service RouteManagementService {
 
         virtual statusCriticality       : Integer,
         virtual canValidate             : Boolean,
-        virtual canReject               : Boolean,
-        virtual assignedToursCount      : Integer
+        virtual canReject               : Boolean
     }
     actions {
         action validateRoadmap() returns Roadmaps;
-        action rejectRoadmap(reason : String) returns Roadmaps;
+    action rejectRoadmap(reason : String) returns Roadmaps;
+    action autoAssignTours() returns Roadmaps;
+    action generateRoadmapSheetHtml() returns LargeString;
     };
 
     entity RoadmapTours as projection on db.RoadmapTours {
@@ -218,30 +185,6 @@ service RouteManagementService {
     action rejectTour(tourID : UUID, supervisorID : UUID, reason : String) returns Tours;
 
     action createRoadmapFromTour(tourID : UUID) returns Roadmaps;
-
-    action createRoadMapWithTours(
-        clientID           : UUID,
-        month              : Integer,
-        year               : Integer,
-        tourIDs            : many UUID,
-        humanResourceIDs   : many UUID,
-        materialResourceIDs : many UUID
-    ) returns Roadmaps;
-
-    action updateRoadMapAssignments(
-        roadMapID          : UUID,
-        tourID             : UUID,
-        humanResourceIDs   : many UUID,
-        materialResourceIDs : many UUID
-    ) returns RoadmapTours;
-
-    function getEligibleToursForRoadMap(
-        clientID : UUID,
-        month    : Integer,
-        year     : Integer
-    ) returns many Tours;
-
-    function generateRoadMapDocumentData(roadMapID : UUID) returns LargeString;
 
     function getPlannerStats(userID : UUID) returns PlannerStats;
 
@@ -588,10 +531,36 @@ annotate RouteManagementService.Tours with @(
 /* ROADMAPS ANNOTATIONS                                  */
 /* ===================================================== */
 
+annotate RouteManagementService.Roadmaps with {
+
+    client @Common.ValueList : {
+        CollectionPath : 'Clients',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : client_ID,
+                ValueListProperty : 'ID'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'customerCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'name'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'city'
+            }
+        ]
+    };
+};
+
 annotate RouteManagementService.Roadmaps with @(
     UI.HeaderInfo : {
-        TypeName       : 'Roadmap',
-        TypeNamePlural : 'Roadmaps',
+        TypeName       : 'Feuille de route',
+        TypeNamePlural : 'Management des feuilles de route',
         Title          : {
             Value : roadmapCode
         },
@@ -600,33 +569,155 @@ annotate RouteManagementService.Roadmaps with @(
         }
     },
 
+    UI.SelectionFields : [
+        roadmapCode,
+        client_ID,
+        month,
+        year,
+        status,
+        integrationStatus
+    ],
+
     UI.LineItem : [
         {
             $Type : 'UI.DataField',
-            Label : 'Code roadmap',
-            Value : roadmapCode
+            Label : 'N° feuille de route',
+            Value : roadmapCode,
+            ![@UI.Importance] : #High
         },
         {
             $Type : 'UI.DataField',
-            Label : 'Date début',
-            Value : startDate
+            Label : 'Client',
+            Value : client.name,
+            ![@UI.Importance] : #High
         },
         {
             $Type : 'UI.DataField',
-            Label : 'Date fin',
-            Value : endDate
+            Label : 'Mois',
+            Value : month
         },
         {
             $Type : 'UI.DataField',
-            Label : 'Tournée',
-            Value : tourCode
+            Label : 'Année',
+            Value : year
         },
         {
             $Type : 'UI.DataField',
             Label : 'Statut',
             Value : status,
             Criticality : statusCriticality,
-            CriticalityRepresentation : #WithIcon
+            CriticalityRepresentation : #WithIcon,
+            ![@UI.Importance] : #High
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Statut intégration',
+            Value : integrationStatus
+        }
+    ],
+
+    UI.Facets : [
+        {
+            $Type  : 'UI.ReferenceFacet',
+            Label  : 'Informations générales',
+            Target : '@UI.FieldGroup#General'
+        },
+        {
+            $Type  : 'UI.ReferenceFacet',
+            Label  : 'Tournées affectées',
+            Target : 'assignedTours/@UI.LineItem'
+        },
+        {
+            $Type  : 'UI.ReferenceFacet',
+            Label  : 'Suivi',
+            Target : '@UI.FieldGroup#Tracking'
+        }
+    ],
+
+    UI.FieldGroup #General : {
+        Data : [
+            {
+                $Type : 'UI.DataField',
+                Label : 'N° feuille de route',
+                Value : roadmapCode
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Client',
+                Value : client_ID
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Mois',
+                Value : month
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Année',
+                Value : year
+            }
+        ]
+    },
+
+    UI.FieldGroup #Tracking : {
+        Data : [
+            {
+                $Type : 'UI.DataField',
+                Label : 'Statut',
+                Value : status,
+                Criticality : statusCriticality,
+                CriticalityRepresentation : #WithIcon
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Statut intégration',
+                Value : integrationStatus
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Commande SAP',
+                Value : sapSalesOrder
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : 'Motif de rejet',
+                Value : rejectionReason
+            }
+        ]
+    }
+);
+
+annotate RouteManagementService.RoadmapTours with @(
+    UI.LineItem : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'Séquence',
+            Value : sequence
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'N° tournée',
+            Value : tourCode
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Date de collecte',
+            Value : tourDate
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Matériau / Type de déchet',
+            Value : tourCollectionType
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Client',
+            Value : clientName
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Remarque',
+            Value : note
         }
     ]
 );

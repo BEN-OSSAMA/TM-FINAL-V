@@ -1,6 +1,9 @@
 namespace route.management;
 
-using { cuid, managed } from '@sap/cds/common';
+using {
+    cuid,
+    managed
+} from '@sap/cds/common';
 
 /* ===================================================== */
 /* USERS                                                 */
@@ -16,19 +19,96 @@ entity Users : cuid {
 }
 
 /* ===================================================== */
+/* ENUMS                                                 */
+/* ===================================================== */
+
+type CategoryType : String enum {
+    HUMAN;
+    MATERIAL;
+}
+
+type AvailabilityStatus : String enum {
+    AVAILABLE;
+    RESERVED;
+    UNAVAILABLE;
+}
+
+type TourStatus : String enum {
+    CREATED;
+    VALIDATED;
+    ASSIGNED;
+    COMPLETED;
+    CANCELLED;
+    REJECTED;
+}
+
+type RoadmapStatus : String enum {
+    CREATED;
+    VALIDATED;
+    COMPLETED;
+    CANCELLED;
+    REJECTED;
+}
+
+type IntegrationStatus : String enum {
+    PENDING;
+    INTEGRATED;
+    FAILED;
+}
+
+/* ===================================================== */
 /* MASTER DATA                                           */
 /* ===================================================== */
 
-entity Clients : cuid {
-    code    : String(30);
-    name    : String(150);
+entity Clients : cuid, managed {
+    @title: 'Code client'
+    customerCode : String(20);
+
+    /*
+       Ancien champ gardé pour compatibilité avec ton projet actuel.
+       Tu peux le supprimer plus tard après migration complète.
+    */
+    code : String(30);
+
+    @title: 'Nom du client'
+    name : String(150);
+
+    @title: 'Adresse'
     address : String(255);
-    city    : String(100);
-    phone   : String(30);
-    email   : String(100);
+
+    @title: 'Ville'
+    city : String(100);
+
+    @title: 'Téléphone'
+    phone : String(30);
+
+    @title: 'E-mail'
+    email : String(100);
 
     collectionPoints : Composition of many CollectionPoints
         on collectionPoints.client = $self;
+}
+
+entity Materials : cuid, managed {
+    @title: 'Code matériau'
+    materialCode : String(40);
+
+    @title: 'Description'
+    description : String(255);
+
+    @title: 'Unité'
+    unitOfMeasure : String(10);
+}
+
+entity Categories : cuid, managed {
+    @title: 'Nom de la catégorie'
+    name : String(100);
+
+    @title: 'Type'
+    type : CategoryType;
+
+    @title: 'Description'
+    description : String(255);
 }
 
 entity Vehicles : cuid {
@@ -56,22 +136,36 @@ entity CollectionPoints : cuid {
     client : Association to Clients;
 }
 
-entity Materials : cuid {
-    materialCode  : String(30);
-    description   : String(200);
-    unitOfMeasure : String(10);
-}
+/* ===================================================== */
+/* RESOURCES                                             */
+/* ===================================================== */
 
-entity HumanResources : cuid {
+entity HumanResources : cuid, managed {
+    @title: 'Matricule'
     employeeCode : String(30);
-    fullName     : String(200);
-    status       : String(20) default 'AVAILABLE';
+
+    @title: 'Nom complet'
+    fullName : String(150);
+
+    @title: 'Catégorie'
+    category : Association to Categories;
+
+    @title: 'Disponibilité'
+    status : AvailabilityStatus;
 }
 
-entity MaterialResources : cuid {
+entity MaterialResources : cuid, managed {
+    @title: 'Code équipement'
     equipmentCode : String(30);
-    name          : String(200);
-    status        : String(20) default 'AVAILABLE';
+
+    @title: 'Équipement'
+    name : String(150);
+
+    @title: 'Catégorie'
+    category : Association to Categories;
+
+    @title: 'Disponibilité'
+    status : AvailabilityStatus;
 }
 
 /* ===================================================== */
@@ -79,23 +173,50 @@ entity MaterialResources : cuid {
 /* ===================================================== */
 
 entity Tours : cuid, managed {
+    /* Nouveaux champs selon le schéma de ton ami */
+
+    @title: 'N° tournée'
+    tourNumber : String(30);
+
+    @title: 'Date de collecte'
+    collectionDate : Date;
+
+    @title: 'Client'
+    client : Association to Clients;
+
+    @title: 'Matériau'
+    material : Association to Materials;
+
+    @title: 'Quantité'
+    quantity : Decimal(15, 3);
+
+    @title: 'Unité'
+    unitOfMeasure : String(10);
+
+    @title: 'Ressource humaine'
+    assignedHumanResource : Association to HumanResources;
+
+    @title: 'Ressource matérielle'
+    assignedMaterialResource : Association to MaterialResources;
+
+    @title: 'Statut'
+    status : TourStatus default 'CREATED';
+
+    @title: 'Remarques'
+    remarks : String(500);
+
+    /* Anciens champs gardés pour ne pas casser ton projet actuel */
+
     tourCode        : String(30);
     tourDate        : Date;
     zone            : String(100);
     collectionType  : String(50);
     description     : LargeString;
-
-    quantity        : Decimal(15, 3);
-    unitOfMeasure   : String(10);
-
-    status          : String(20) default 'CREATED';
     rejectionReason : LargeString;
 
     updatedAt       : Timestamp @cds.on.insert: $now @cds.on.update: $now;
 
     createdByUser : Association to Users;
-    client        : Association to Clients;
-    material      : Association to Materials;
     vehicle       : Association to Vehicles;
     driver        : Association to Drivers;
 
@@ -120,9 +241,8 @@ entity TourHumanResources : cuid, managed {
     note      : String(255);
     updatedAt : Timestamp @cds.on.insert: $now @cds.on.update: $now;
 
-    tour          : Association to Tours;
-    driver        : Association to Drivers;
-    humanResource : Association to HumanResources;
+    tour   : Association to Tours;
+    driver : Association to Drivers;
 }
 
 entity TourMaterialResources : cuid, managed {
@@ -131,9 +251,8 @@ entity TourMaterialResources : cuid, managed {
     note      : String(255);
     updatedAt : Timestamp @cds.on.insert: $now @cds.on.update: $now;
 
-    tour             : Association to Tours;
-    vehicle          : Association to Vehicles;
-    materialResource : Association to MaterialResources;
+    tour    : Association to Tours;
+    vehicle : Association to Vehicles;
 }
 
 entity TourCollectionPoints : cuid {
@@ -148,29 +267,51 @@ entity TourCollectionPoints : cuid {
 /* ===================================================== */
 
 entity Roadmaps : cuid, managed {
-    roadmapCode         : String(30);
-    status              : String(20) default 'CREATED';
-    startDate           : Date;
-    endDate             : Date;
-    month               : Integer;
-    year                : Integer;
-    rejectionReason     : LargeString;
-    integrationStatus   : String(30) default 'NOT_INTEGRATED';
-    sapSalesOrderNumber : String(30);
+    /* Nouveaux champs selon le schéma de ton ami */
 
-    updatedAt           : Timestamp @cds.on.insert: $now @cds.on.update: $now;
+    @title: 'N° feuille de route'
+    roadmapNumber : String(30);
 
+    @title: 'Client'
     client : Association to Clients;
-    tour   : Association to Tours;
+
+    @title: 'Mois'
+    month : Integer;
+
+    @title: 'Année'
+    year : Integer;
+
+    @title: 'Statut'
+    status : RoadmapStatus default 'CREATED';
+
+    @title: 'Statut d’intégration'
+    integrationStatus : IntegrationStatus default 'PENDING';
+
+    @title: 'Commande SAP'
+    sapSalesOrder : String(20);
+
+    @title: 'Date d’intégration'
+    integrationDate : Timestamp;
+
+    @title: 'Message d’intégration'
+    integrationMessage : String(500);
+
+    /* Anciens champs gardés pour compatibilité */
+
+    roadmapCode     : String(30);
+    startDate       : Date;
+    endDate         : Date;
+    rejectionReason : LargeString;
+
+    updatedAt       : Timestamp @cds.on.insert: $now @cds.on.update: $now;
+
+    tour : Association to Tours;
 
     assignedTours : Composition of many RoadmapTours
         on assignedTours.roadmap = $self;
 
     steps : Composition of many RoadmapSteps
         on steps.roadmap = $self;
-
-    decisions : Composition of many DecisionHistories
-        on decisions.roadmap = $self;
 }
 
 entity RoadmapTours : cuid, managed {
@@ -191,19 +332,22 @@ entity RoadmapSteps : cuid, managed {
     collectionPoint : Association to CollectionPoints;
 }
 
+entity RoadMapTourAssignments : managed {
+    key roadMap : Association to Roadmaps;
+    key tour    : Association to Tours;
+}
+
 /* ===================================================== */
 /* DECISION HISTORY                                      */
 /* ===================================================== */
 
 entity DecisionHistories : cuid, managed {
-    decision     : String(20);
+    decision     : String(20); // ACCEPTED | REJECTED | VALIDATED
     reason       : LargeString;
     decisionDate : Timestamp @cds.on.insert: $now;
-    entityType   : String(20);
 
     decidedBy : Association to Users;
     tour      : Association to Tours;
-    roadmap   : Association to Roadmaps;
 }
 
 /* ===================================================== */
@@ -215,7 +359,7 @@ entity TourStatusAnalytics as select from Tours {
         count(1) as total : Integer,
         case
             when status = 'VALIDATED' then 3
-            when status = 'ACCEPTED' then 3
+            when status = 'ASSIGNED' then 3
             when status = 'COMPLETED' then 3
             when status = 'REJECTED' then 1
             when status = 'CANCELLED' then 1
@@ -224,26 +368,11 @@ entity TourStatusAnalytics as select from Tours {
 }
 group by status;
 
-entity AvailableHumanResources as select from HumanResources {
-    key ID,
-        employeeCode,
-        fullName,
-        status
-} where status = 'AVAILABLE';
-
-entity AvailableMaterialResources as select from MaterialResources {
-    key ID,
-        equipmentCode,
-        name,
-        status
-} where status = 'AVAILABLE';
-
 entity RoadmapStatusAnalytics as select from Roadmaps {
     key status as status,
         count(1) as total : Integer,
         case
             when status = 'VALIDATED' then 3
-            when status = 'ACTIVE' then 3
             when status = 'COMPLETED' then 3
             when status = 'REJECTED' then 1
             when status = 'CANCELLED' then 1

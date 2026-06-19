@@ -1,5 +1,4 @@
 const cds = require('@sap/cds');
-const registerLoginHandler = require('./handlers/login-handler');
 
 const TOUR_STATUS = {
   CREATED: 'CREATED',
@@ -15,6 +14,31 @@ const ROADMAP_STATUS = {
 
 function reject(req, message, status = 400) {
   return req.reject(status, message);
+}
+
+
+async function nextCode(entityName, fieldName, prefix) {
+  const entities = cds.entities('route.management');
+  const target = entities[entityName];
+
+  const rows = await SELECT.from(target)
+    .columns(fieldName)
+    .orderBy(`${fieldName} desc`)
+    .limit(1);
+
+  let seq = 1;
+
+  if (rows.length && rows[0][fieldName]) {
+    const match = String(rows[0][fieldName]).match(/(\d+)$/);
+
+    if (match) {
+      seq = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  const year = new Date().getFullYear();
+
+  return `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
 }
 
 /* ===================================================== */
@@ -37,16 +61,36 @@ function normalizeTourStatus(status) {
   return TOUR_STATUS.CREATED;
 }
 
+// function normalizeRoadmapStatus(status) {
+//   if (['DRAFT', 'PENDING', 'CREATED'].includes(status)) {
+//     return ROADMAP_STATUS.CREATED;
+//   }
+
+//   if (['ACTIVE', 'VALIDATED', 'COMPLETED'].includes(status)) {
+//     return ROADMAP_STATUS.VALIDATED;
+//   }
+
+//   if (['REJECTED', 'CANCELLED'].includes(status)) {
+//     return ROADMAP_STATUS.REJECTED;
+//   }
+
+//   return ROADMAP_STATUS.CREATED;
+// }
+
 function normalizeRoadmapStatus(status) {
-  if (['DRAFT', 'PENDING', 'CREATED'].includes(status)) {
+  const normalized = String(status || '')
+    .trim()
+    .toUpperCase();
+
+  if (['DRAFT', 'PENDING', 'CREATED'].includes(normalized)) {
     return ROADMAP_STATUS.CREATED;
   }
 
-  if (['ACTIVE', 'VALIDATED', 'COMPLETED'].includes(status)) {
+  if (['ACTIVE', 'VALIDATED', 'COMPLETED'].includes(normalized)) {
     return ROADMAP_STATUS.VALIDATED;
   }
 
-  if (['REJECTED', 'CANCELLED'].includes(status)) {
+  if (['REJECTED', 'CANCELLED'].includes(normalized)) {
     return ROADMAP_STATUS.REJECTED;
   }
 
@@ -77,194 +121,9 @@ function isRejectedRoadmapStatus(status) {
   return normalizeRoadmapStatus(status) === ROADMAP_STATUS.REJECTED;
 }
 
-const DELETABLE_TOUR_STATUSES = new Set([
-  'DRAFT',
-  'CREATED',
-  'REJECTED'
-]);
-
-function validateTourMandatoryFields(req, data) {
-  const clientID = data.client_ID || data.client?.ID;
-
-  if (!clientID) {
-    return reject(req, 'Le client est obligatoire.');
-  }
-
-  if (!data.tourDate) {
-    return reject(req, 'La date de collecte est obligatoire.');
-  }
-
-  const materialID = data.material_ID || data.material?.ID;
-
-  if (!materialID) {
-    return reject(req, 'Le matériau est obligatoire.');
-  }
-
-  const quantity = Number(data.quantity);
-
-  if (data.quantity === undefined || data.quantity === null || Number.isNaN(quantity) || quantity <= 0) {
-    return reject(req, 'La quantité doit être supérieure à zéro.');
-  }
-
-  if (!data.unitOfMeasure || !String(data.unitOfMeasure).trim()) {
-    return reject(req, "L'unité de mesure est obligatoire.");
-  }
-
-  return null;
-}
-
-function monthYearFromDate(dateValue) {
-  if (!dateValue) {
-    return { month: null, year: null };
-  }
-
-  const value = String(dateValue).slice(0, 10);
-  const parts = value.split('-');
-
-  return {
-    month: Number(parts[1]),
-    year: Number(parts[0])
-  };
-}
-
-function monthRange(month, year) {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  return { startDate, endDate };
-}
-
-function isDateInMonthYear(dateValue, month, year) {
-  const parsed = monthYearFromDate(dateValue);
-
-  return parsed.month === Number(month) && parsed.year === Number(year);
-}
-
-async function tourInValidatedRoadmap(tourID, entities, excludeRoadmapID) {
-  const { RoadmapTours, Roadmaps } = entities;
-  const assignments = await SELECT.from(RoadmapTours).where({ tour_ID: tourID });
-
-  for (const assignment of assignments) {
-    const roadmap = await SELECT.one.from(Roadmaps).where({ ID: assignment.roadmap_ID });
-
-    if (!roadmap) {
-      continue;
-    }
-
-    if (excludeRoadmapID && roadmap.ID === excludeRoadmapID) {
-      continue;
-    }
-
-    if (isValidatedRoadmapStatus(roadmap.status)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-async function replaceTourResources(tourID, humanResourceIDs, materialResourceIDs, entities) {
-  const { TourHumanResources, TourMaterialResources } = entities;
-
-  await DELETE.from(TourHumanResources).where({ tour_ID: tourID });
-  await DELETE.from(TourMaterialResources).where({ tour_ID: tourID });
-
-  let sequence = 1;
-
-  for (const humanResourceID of humanResourceIDs || []) {
-    await INSERT.into(TourHumanResources).entries({
-      ID: cds.utils.uuid(),
-      tour_ID: tourID,
-      humanResource_ID: humanResourceID,
-      sequence: sequence++
-    });
-  }
-
-  sequence = 1;
-
-  for (const materialResourceID of materialResourceIDs || []) {
-    await INSERT.into(TourMaterialResources).entries({
-      ID: cds.utils.uuid(),
-      tour_ID: tourID,
-      materialResource_ID: materialResourceID,
-      sequence: sequence++
-    });
-  }
-}
-
-async function validateRoadmapBusinessRules(req, roadmapID, entities) {
-  const { Roadmaps, RoadmapTours, Tours } = entities;
-  const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadmapID });
-
-  if (!roadmap) {
-    return reject(req, 'Roadmap introuvable.');
-  }
-
-  if (!roadmap.client_ID) {
-    return reject(req, 'Le client est obligatoire pour la roadmap.');
-  }
-
-  if (!roadmap.month || !roadmap.year) {
-    return reject(req, 'Le mois et l\'année sont obligatoires pour la roadmap.');
-  }
-
-  const assignments = await SELECT.from(RoadmapTours).where({ roadmap_ID: roadmapID });
-
-  if (!assignments.length) {
-    return reject(req, 'La roadmap doit contenir au moins une tournée.');
-  }
-
-  for (const assignment of assignments) {
-    const tour = await SELECT.one.from(Tours).where({ ID: assignment.tour_ID });
-
-    if (!tour) {
-      return reject(req, 'Une tournée affectée est introuvable.');
-    }
-
-    if (!isValidatedStatus(tour.status)) {
-      return reject(req, `La tournée ${tour.tourCode || tour.ID} n'est pas validée.`);
-    }
-
-    if (tour.client_ID !== roadmap.client_ID) {
-      return reject(req, 'Toutes les tournées doivent appartenir au même client que la roadmap.');
-    }
-
-    if (!isDateInMonthYear(tour.tourDate, roadmap.month, roadmap.year)) {
-      return reject(req, `La tournée ${tour.tourCode || tour.ID} n'est pas dans le mois sélectionné.`);
-    }
-
-    if (await tourInValidatedRoadmap(tour.ID, entities, roadmapID)) {
-      return reject(req, `La tournée ${tour.tourCode || tour.ID} appartient déjà à une roadmap validée.`);
-    }
-  }
-
-  return null;
-}
-
-async function getEligibleToursForRoadMapInternal(clientID, month, year, entities) {
-  const { Tours } = entities;
-  const tours = await SELECT.from(Tours).where({ client_ID: clientID });
-  const eligible = [];
-
-  for (const tour of tours) {
-    if (!isValidatedStatus(tour.status)) {
-      continue;
-    }
-
-    if (!isDateInMonthYear(tour.tourDate, month, year)) {
-      continue;
-    }
-
-    if (await tourInValidatedRoadmap(tour.ID, entities)) {
-      continue;
-    }
-
-    eligible.push(tour);
-  }
-
-  return eligible;
-}
+/* ===================================================== */
+/* CODE GENERATOR                                        */
+/* ===================================================== */
 
 async function nextCode(entityName, fieldName, prefix) {
   const entities = cds.entities('route.management');
@@ -288,6 +147,125 @@ async function nextCode(entityName, fieldName, prefix) {
   return `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
 }
 
+/* ===================================================== */
+/* FIELD COMPATIBILITY HELPERS                           */
+/* ===================================================== */
+
+function syncTourPayload(data) {
+  if (!data) {
+    return;
+  }
+
+  if (data.tourNumber && !data.tourCode) {
+    data.tourCode = data.tourNumber;
+  }
+
+  if (data.tourCode && !data.tourNumber) {
+    data.tourNumber = data.tourCode;
+  }
+
+  if (data.collectionDate && !data.tourDate) {
+    data.tourDate = data.collectionDate;
+  }
+
+  if (data.tourDate && !data.collectionDate) {
+    data.collectionDate = data.tourDate;
+  }
+
+  if (data.remarks && !data.description) {
+    data.description = data.remarks;
+  }
+
+  if (data.description && !data.remarks) {
+    data.remarks = data.description;
+  }
+}
+
+function syncRoadmapPayload(data) {
+  if (!data) {
+    return;
+  }
+
+  if (data.roadmapNumber && !data.roadmapCode) {
+    data.roadmapCode = data.roadmapNumber;
+  }
+
+  if (data.roadmapCode && !data.roadmapNumber) {
+    data.roadmapNumber = data.roadmapCode;
+  }
+
+  if (data.startDate && (!data.month || !data.year)) {
+    const d = new Date(data.startDate);
+    if (!Number.isNaN(d.getTime())) {
+      data.month = data.month || d.getMonth() + 1;
+      data.year = data.year || d.getFullYear();
+    }
+  }
+
+  if (data.month && data.year && !data.startDate) {
+    const month = String(data.month).padStart(2, '0');
+    data.startDate = `${data.year}-${month}-01`;
+  }
+}
+
+function enrichTourAliases(tour) {
+  if (!tour) {
+    return;
+  }
+
+  tour.tourNumber = tour.tourNumber || tour.tourCode;
+  tour.tourCode = tour.tourCode || tour.tourNumber;
+
+  tour.collectionDate = tour.collectionDate || tour.tourDate;
+  tour.tourDate = tour.tourDate || tour.collectionDate;
+
+  tour.remarks = tour.remarks || tour.description;
+  tour.description = tour.description || tour.remarks;
+}
+
+function enrichRoadmapAliases(roadmap) {
+  if (!roadmap) {
+    return;
+  }
+
+  roadmap.roadmapNumber = roadmap.roadmapNumber || roadmap.roadmapCode;
+  roadmap.roadmapCode = roadmap.roadmapCode || roadmap.roadmapNumber;
+
+  if (roadmap.startDate && (!roadmap.month || !roadmap.year)) {
+    const d = new Date(roadmap.startDate);
+    if (!Number.isNaN(d.getTime())) {
+      roadmap.month = roadmap.month || d.getMonth() + 1;
+      roadmap.year = roadmap.year || d.getFullYear();
+    }
+  }
+}
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function monthRange(year, month) {
+  const y = Number(year);
+  const m = Number(month);
+
+  const startDate = `${y}-${pad2(m)}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const endDate = `${y}-${pad2(m)}-${pad2(lastDay)}`;
+
+  return {
+    startDate,
+    endDate
+  };
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 module.exports = class RouteManagementService extends cds.ApplicationService {
   init() {
     const {
@@ -298,13 +276,8 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
       RoadmapSteps,
       DecisionHistories,
       TourCollectionPoints,
-      TourHumanResources,
-      TourMaterialResources,
       CollectionPoints,
       Clients,
-      Materials,
-      HumanResources,
-      MaterialResources,
       Vehicles,
       Drivers
     } = cds.entities('route.management');
@@ -321,24 +294,11 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
           continue;
         }
 
+         enrichTourAliases(tour);
+
+
         const normalizedStatus = normalizeTourStatus(tour.status);
         tour.status = normalizedStatus;
-        tour.tourNumber = tour.tourNumber || tour.tourCode;
-        tour.collectionDate = tour.collectionDate || tour.tourDate;
-
-        if (tour.humanResources && Array.isArray(tour.humanResources)) {
-          tour.humanResourcesLabel = tour.humanResources
-            .map((entry) => entry.humanResourceName || entry.driverLastName || entry.role)
-            .filter(Boolean)
-            .join(', ');
-        }
-
-        if (tour.materialResources && Array.isArray(tour.materialResources)) {
-          tour.materialResourcesLabel = tour.materialResources
-            .map((entry) => entry.materialResourceName || entry.vehicleRegistration || entry.usage)
-            .filter(Boolean)
-            .join(', ');
-        }
 
         if (normalizedStatus === TOUR_STATUS.VALIDATED) {
           tour.statusCriticality = 3;
@@ -367,6 +327,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         if (!roadmap) {
           continue;
         }
+            enrichRoadmapAliases(roadmap);
 
         const normalizedStatus = normalizeRoadmapStatus(roadmap.status);
         roadmap.status = normalizedStatus;
@@ -391,183 +352,248 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* AUTHENTICATION                                        */
     /* ===================================================== */
 
-    registerLoginHandler(this, { Users }, { reject });
+    this.on('login', async (req) => {
+      const email = req.data.email || req.data.username;
+      const { password } = req.data;
+
+      if (!email || !password) {
+        return reject(req, 'E-mail et mot de passe requis.');
+      }
+
+      let user = await SELECT.one.from(Users).where({
+        email,
+        password
+      });
+
+      if (!user) {
+        user = await SELECT.one.from(Users).where({
+          username: email,
+          password
+        });
+      }
+
+      if (!user) {
+        return reject(req, 'Identifiants incorrects.', 401);
+      }
+
+      if (!user.active) {
+        return reject(req, 'Utilisateur inactif.', 403);
+      }
+
+      return {
+        ID: user.ID,
+        email: user.email,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        active: user.active
+      };
+    });
 
     /* ===================================================== */
     /* TOURS — BEFORE CREATE / UPDATE                        */
     /* ===================================================== */
 
     this.before('CREATE', 'Tours', async (req) => {
-      const validationError = validateTourMandatoryFields(req, req.data);
+  syncTourPayload(req.data);
 
-      if (validationError) {
-        return validationError;
-      }
+  if (!req.data.tourCode) {
+    req.data.tourCode = await nextCode('Tours', 'tourCode', 'TOUR');
+  }
 
-      if (!req.data.tourCode) {
-        req.data.tourCode = await nextCode('Tours', 'tourCode', 'TOUR');
-      }
+  if (!req.data.tourNumber) {
+    req.data.tourNumber = req.data.tourCode;
+  }
 
-      if (!req.data.status) {
-        req.data.status = TOUR_STATUS.CREATED;
-      }
+  if (!req.data.status) {
+    req.data.status = TOUR_STATUS.CREATED;
+  }
 
-      if (!req.data.collectionType && req.data.material_ID) {
-        const material = await SELECT.one.from(Materials).where({ ID: req.data.material_ID });
+  if (req.data.quantity !== undefined && req.data.quantity !== null) {
+    const quantity = Number(req.data.quantity);
 
-        if (material) {
-          req.data.collectionType = material.description;
-        }
-      }
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      return reject(req, 'La quantité doit être supérieure à zéro.');
+    }
+  }
+});
+    
+
+      this.before('UPDATE', 'Tours', async (req) => {
+  syncTourPayload(req.data);
+
+  if (req.data.quantity !== undefined && req.data.quantity !== null) {
+    const quantity = Number(req.data.quantity);
+
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      return reject(req, 'La quantité doit être supérieure à zéro.');
+    }
+  }
+
+  const id = req.data.ID || req.params?.[0]?.ID;
+
+  if (!id) {
+    return;
+  }
+
+  const tour = await SELECT.one.from(Tours).where({ ID: id });
+
+  if (!tour) {
+    return;
+  }
+
+  const normalizedStatus = normalizeTourStatus(tour.status);
+
+  const technicalFields = new Set([
+    'ID',
+    'IsActiveEntity',
+    'HasActiveEntity',
+    'HasDraftEntity',
+    'DraftAdministrativeData',
+    'DraftAdministrativeData_DraftUUID',
+    'SiblingEntity',
+    'statusCriticality',
+    'canValidate',
+    'canReject',
+    'clientName',
+    'driverFirstName',
+    'driverLastName',
+    'vehicleRegistration',
+    'createdByName',
+    'tourPoints',
+    'decisions',
+    'roadmap',
+    'humanResources',
+    'materialResources',
+    'createdAt',
+    'createdBy',
+    'modifiedAt',
+    'modifiedBy'
+  ]);
+
+  const keys = Object.keys(req.data).filter((key) => {
+    return !key.startsWith('_') && !technicalFields.has(key);
+  });
+
+  const allowedFields = new Set([
+    'tourCode',
+    'tourNumber',
+    'tourDate',
+    'collectionDate',
+    'zone',
+    'collectionType',
+    'description',
+    'remarks',
+    'quantity',
+    'unitOfMeasure',
+    'status',
+    'rejectionReason',
+
+    'client_ID',
+    'client',
+
+    'material_ID',
+    'material',
+
+    'vehicle_ID',
+    'vehicle',
+    'driver_ID',
+    'driver',
+
+    'assignedHumanResource_ID',
+    'assignedHumanResource',
+    'assignedMaterialResource_ID',
+    'assignedMaterialResource',
+
+    'roadmap_ID',
+    'roadmap',
+    'createdByUser_ID',
+    'createdByUser',
+    'updatedAt'
+  ]);
+
+  const forbidden = keys.filter((key) => !allowedFields.has(key));
+
+  if (forbidden.length) {
+    return reject(
+      req,
+      `Modification interdite pour les champs suivants : ${forbidden.join(', ')}`
+    );
+  }
+
+  if (normalizedStatus === TOUR_STATUS.REJECTED) {
+    const businessFields = [
+      'tourCode',
+      'tourNumber',
+      'tourDate',
+      'collectionDate',
+      'zone',
+      'collectionType',
+      'description',
+      'remarks',
+      'quantity',
+      'unitOfMeasure',
+
+      'client_ID',
+      'client',
+
+      'material_ID',
+      'material',
+
+      'vehicle_ID',
+      'vehicle',
+      'driver_ID',
+      'driver',
+
+      'assignedHumanResource_ID',
+      'assignedHumanResource',
+      'assignedMaterialResource_ID',
+      'assignedMaterialResource'
+    ];
+
+    const hasBusinessModification = keys.some((key) => {
+      return businessFields.includes(key);
     });
 
-    this.before('DELETE', 'Tours', async (req) => {
-      const id = req.data?.ID || req.params?.[0]?.ID;
-
-      if (!id) {
-        return;
-      }
-
-      const tour = await SELECT.one.from(Tours).where({ ID: id });
-
-      if (!tour) {
-        return reject(req, 'Tournée introuvable.');
-      }
-
-      if (!DELETABLE_TOUR_STATUSES.has(tour.status)) {
-        return reject(
-          req,
-          'Seules les tournées en brouillon, créées ou rejetées peuvent être supprimées.'
-        );
-      }
-
-      if (tour.roadmap_ID) {
-        return reject(req, 'Cette tournée est liée à une roadmap et ne peut pas être supprimée.');
-      }
-    });
-
-    this.before('UPDATE', 'Tours', async (req) => {
-      const id = req.data.ID || req.params?.[0]?.ID;
-
-      if (!id) {
-        return;
-      }
-
-      const tour = await SELECT.one.from(Tours).where({ ID: id });
-
-      if (!tour) {
-        return;
-      }
-
-      const normalizedStatus = normalizeTourStatus(tour.status);
-
-      const technicalFields = new Set([
-        'ID',
-        'IsActiveEntity',
-        'HasActiveEntity',
-        'HasDraftEntity',
-        'DraftAdministrativeData',
-        'DraftAdministrativeData_DraftUUID',
-        'SiblingEntity',
-        'statusCriticality',
-        'canValidate',
-        'canReject',
-        'clientName',
-        'driverFirstName',
-        'driverLastName',
-        'vehicleRegistration',
-        'createdByName',
-        'tourPoints',
-        'decisions',
-        'roadmap',
-        'humanResources',
-        'materialResources',
-        'createdAt',
-        'createdBy',
-        'modifiedAt',
-        'modifiedBy'
-      ]);
-
-      const keys = Object.keys(req.data).filter((key) => {
-        return !key.startsWith('_') && !technicalFields.has(key);
-      });
-
-      const allowedFields = new Set([
-        'tourCode',
-        'tourDate',
-        'zone',
-        'collectionType',
-        'description',
-        'quantity',
-        'unitOfMeasure',
-        'status',
-        'rejectionReason',
-        'client_ID',
-        'client',
-        'material_ID',
-        'material',
-        'vehicle_ID',
-        'vehicle',
-        'driver_ID',
-        'driver',
-        'roadmap_ID',
-        'roadmap',
-        'createdByUser_ID',
-        'createdByUser',
-        'updatedAt'
-      ]);
-
-      const forbidden = keys.filter((key) => !allowedFields.has(key));
-
-      if (forbidden.length) {
-        return reject(
-          req,
-          `Modification interdite pour les champs suivants : ${forbidden.join(', ')}`
-        );
-      }
-
-      if (normalizedStatus === TOUR_STATUS.REJECTED) {
-        const businessFields = [
-          'tourDate',
-          'zone',
-          'collectionType',
-          'description',
-          'quantity',
-          'unitOfMeasure',
-          'client_ID',
-          'client',
-          'material_ID',
-          'material',
-          'vehicle_ID',
-          'vehicle',
-          'driver_ID',
-          'driver'
-        ];
-
-        const hasBusinessModification = keys.some((key) => businessFields.includes(key));
-
-        if (hasBusinessModification) {
-          req.data.status = TOUR_STATUS.CREATED;
-          req.data.rejectionReason = null;
-        }
-      }
-    });
+    if (hasBusinessModification) {
+      req.data.status = TOUR_STATUS.CREATED;
+      req.data.rejectionReason = null;
+    }
+  }
+});
 
     /* ===================================================== */
     /* ROADMAPS — BEFORE CREATE / UPDATE                     */
     /* ===================================================== */
 
     this.before('CREATE', 'Roadmaps', async (req) => {
-      if (!req.data.roadmapCode) {
-        req.data.roadmapCode = await nextCode('Roadmaps', 'roadmapCode', 'RM');
-      }
+  syncRoadmapPayload(req.data);
 
-      if (!req.data.status) {
-        req.data.status = ROADMAP_STATUS.CREATED;
-      }
-    });
+  if (!req.data.roadmapNumber && !req.data.roadmapCode) {
+    const code = await nextCode('Roadmaps', 'roadmapNumber', 'RM');
+    req.data.roadmapNumber = code;
+    req.data.roadmapCode = code;
+  }
+
+  if (req.data.roadmapNumber && !req.data.roadmapCode) {
+    req.data.roadmapCode = req.data.roadmapNumber;
+  }
+
+  if (req.data.roadmapCode && !req.data.roadmapNumber) {
+    req.data.roadmapNumber = req.data.roadmapCode;
+  }
+
+  if (!req.data.status) {
+    req.data.status = ROADMAP_STATUS.CREATED;
+  }
+
+  if (!req.data.integrationStatus) {
+    req.data.integrationStatus = 'PENDING';
+  }
+});
 
     this.before('UPDATE', 'Roadmaps', async (req) => {
+      syncRoadmapPayload(req.data);
       const id = req.data.ID || req.params?.[0]?.ID;
 
       if (!id) {
@@ -612,21 +638,26 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
       });
 
       const allowedFields = new Set([
-        'roadmapCode',
-        'startDate',
-        'endDate',
-        'month',
-        'year',
-        'status',
-        'rejectionReason',
-        'integrationStatus',
-        'sapSalesOrderNumber',
-        'client_ID',
-        'client',
-        'tour_ID',
-        'tour',
-        'updatedAt'
-      ]);
+  'roadmapCode',
+  'roadmapNumber',
+  'startDate',
+  'endDate',
+  'status',
+  'rejectionReason',
+
+  'client_ID',
+  'client',
+  'month',
+  'year',
+  'integrationStatus',
+  'sapSalesOrder',
+  'integrationDate',
+  'integrationMessage',
+
+  'tour_ID',
+  'tour',
+  'updatedAt'
+]);
 
       const forbidden = keys.filter((key) => !allowedFields.has(key));
 
@@ -662,52 +693,20 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* ===================================================== */
 
     this.before('CREATE', 'RoadmapTours', async (req) => {
-      const roadmapID = req.data.roadmap_ID;
-      const tourID = req.data.tour_ID;
-
-      if (!roadmapID || !tourID) {
-        return reject(req, 'La roadmap et la tournée sont obligatoires.');
-      }
-
-      const [roadmap, tour] = await Promise.all([
-        SELECT.one.from(Roadmaps).where({ ID: roadmapID }),
-        SELECT.one.from(Tours).where({ ID: tourID })
-      ]);
-
-      if (!roadmap) {
-        return reject(req, 'Roadmap introuvable.');
-      }
-
-      if (!tour) {
-        return reject(req, 'Tournée introuvable.');
-      }
-
-      if (!isValidatedStatus(tour.status)) {
-        return reject(req, 'Seules les tournées validées peuvent être affectées à une roadmap.');
-      }
-
-      if (roadmap.client_ID && tour.client_ID !== roadmap.client_ID) {
-        return reject(req, 'La tournée doit appartenir au même client que la roadmap.');
-      }
-
-      if (roadmap.month && roadmap.year && !isDateInMonthYear(tour.tourDate, roadmap.month, roadmap.year)) {
-        return reject(req, 'La tournée doit être dans le mois et l\'année de la roadmap.');
-      }
-
-      if (await tourInValidatedRoadmap(tourID, { RoadmapTours, Roadmaps }, roadmapID)) {
-        return reject(req, 'Cette tournée appartient déjà à une roadmap validée.');
-      }
-
       if (!req.data.sequence) {
-        const existing = await SELECT.from(RoadmapTours)
-          .columns('sequence')
-          .where({ roadmap_ID: roadmapID })
-          .orderBy('sequence desc')
-          .limit(1);
+        const roadmapID = req.data.roadmap_ID;
 
-        req.data.sequence = existing.length && existing[0].sequence
-          ? existing[0].sequence + 1
-          : 1;
+        if (roadmapID) {
+          const existing = await SELECT.from(RoadmapTours)
+            .columns('sequence')
+            .where({ roadmap_ID: roadmapID })
+            .orderBy('sequence desc')
+            .limit(1);
+
+          req.data.sequence = existing.length && existing[0].sequence
+            ? existing[0].sequence + 1
+            : 1;
+        }
       }
     });
 
@@ -799,12 +798,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les tournées créées peuvent être validées.');
       }
 
-      const validationError = validateTourMandatoryFields(req, tour);
-
-      if (validationError) {
-        return validationError;
-      }
-
       const supervisor = await SELECT.one.from(Users).where({ ID: supervisorID });
 
       if (!supervisor) {
@@ -827,7 +820,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.VALIDATED,
         reason: null,
-        entityType: 'TOUR',
         decidedBy_ID: supervisorID,
         tour_ID: tourID
       });
@@ -876,7 +868,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.REJECTED,
         reason: trimmedReason,
-        entityType: 'TOUR',
         decidedBy_ID: supervisorID,
         tour_ID: tourID
       });
@@ -905,12 +896,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les tournées créées peuvent être validées.');
       }
 
-      const validationError = validateTourMandatoryFields(req, tour);
-
-      if (validationError) {
-        return validationError;
-      }
-
       await UPDATE(Tours)
         .set({
           status: TOUR_STATUS.VALIDATED,
@@ -923,14 +908,13 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.VALIDATED,
         reason: null,
-        entityType: 'TOUR',
         tour_ID: tourID
       });
 
       return SELECT.one.from(Tours).where({ ID: tourID });
     });
 
-    this.on('rejectTour', 'Tours', async (req) => {
+    this.on('reject', 'Tours', async (req) => {
       const tourID = req.params?.[0]?.ID;
       const reason = req.data.reason;
 
@@ -966,7 +950,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         ID: cds.utils.uuid(),
         decision: TOUR_STATUS.REJECTED,
         reason: trimmedReason,
-        entityType: 'TOUR',
         tour_ID: tourID
       });
 
@@ -976,6 +959,317 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* ===================================================== */
     /* ROADMAPS — BOUND ACTIONS FOR FIORI                    */
     /* ===================================================== */
+        this.on('autoAssignTours', 'Roadmaps', async (req) => {
+      const roadmapID = req.params?.[0]?.ID;
+
+      if (!roadmapID) {
+        return reject(req, 'Identifiant de feuille de route manquant.');
+      }
+
+      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadmapID });
+
+      if (!roadmap) {
+        return reject(req, 'Feuille de route introuvable.');
+      }
+
+      if (!roadmap.client_ID) {
+        return reject(req, 'Veuillez sélectionner un client avant d’affecter les tournées.');
+      }
+
+      if (!roadmap.month || !roadmap.year) {
+        return reject(req, 'Veuillez saisir le mois et l’année avant d’affecter les tournées.');
+      }
+
+      const range = monthRange(roadmap.year, roadmap.month);
+
+      await UPDATE(Roadmaps)
+        .set({
+          startDate: range.startDate,
+          endDate: range.endDate,
+          updatedAt: new Date().toISOString()
+        })
+        .where({ ID: roadmapID });
+
+      const existingAssignments = await SELECT.from(RoadmapTours)
+        .columns('tour_ID', 'roadmap_ID');
+
+      const assignedToOtherRoadmap = new Set(
+        existingAssignments
+          .filter((assignment) => assignment.roadmap_ID !== roadmapID)
+          .map((assignment) => assignment.tour_ID)
+      );
+
+      const allTours = await SELECT.from(Tours);
+
+      const matchingTours = allTours.filter((tour) => {
+        const date = tour.tourDate || tour.collectionDate;
+
+        if (!date) {
+          return false;
+        }
+
+        const d = new Date(date);
+
+        if (Number.isNaN(d.getTime())) {
+          return false;
+        }
+
+        const sameClient = tour.client_ID === roadmap.client_ID;
+        const sameMonth = d.getMonth() + 1 === Number(roadmap.month);
+        const sameYear = d.getFullYear() === Number(roadmap.year);
+        const validStatus = normalizeTourStatus(tour.status) === TOUR_STATUS.VALIDATED;
+        const notAssignedElsewhere = !assignedToOtherRoadmap.has(tour.ID);
+
+        return sameClient && sameMonth && sameYear && validStatus && notAssignedElsewhere;
+      });
+
+      await DELETE.from(RoadmapTours).where({ roadmap_ID: roadmapID });
+
+      let sequence = 1;
+
+      for (const tour of matchingTours) {
+        await INSERT.into(RoadmapTours).entries({
+          ID: cds.utils.uuid(),
+          sequence,
+          note: `Tournée affectée automatiquement`,
+          roadmap_ID: roadmapID,
+          tour_ID: tour.ID
+        });
+
+        sequence += 1;
+      }
+
+      return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
+    });
+
+    this.on('generateRoadmapSheetHtml', 'Roadmaps', async (req) => {
+      const roadmapID = req.params?.[0]?.ID;
+
+      if (!roadmapID) {
+        return reject(req, 'Identifiant de feuille de route manquant.');
+      }
+
+      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadmapID });
+
+      if (!roadmap) {
+        return reject(req, 'Feuille de route introuvable.');
+      }
+
+      const client = roadmap.client_ID
+        ? await SELECT.one.from(Clients).where({ ID: roadmap.client_ID })
+        : null;
+
+      const assignments = await SELECT.from(RoadmapTours)
+        .where({ roadmap_ID: roadmapID })
+        .orderBy('sequence');
+
+      if (!assignments.length) {
+        return reject(req, 'Aucune tournée affectée à cette feuille de route.');
+      }
+
+      const tourIDs = assignments.map((assignment) => assignment.tour_ID);
+      const tours = await SELECT.from(Tours).where({ ID: { in: tourIDs } });
+
+      const toursByID = new Map(tours.map((tour) => [tour.ID, tour]));
+
+      const groups = new Map();
+
+      for (const assignment of assignments) {
+        const tour = toursByID.get(assignment.tour_ID);
+
+        if (!tour) {
+          continue;
+        }
+
+        const material = tour.collectionType || 'Non renseigné';
+        const unit = tour.unitOfMeasure || 'KG';
+        const key = `${material}__${unit}`;
+
+        if (!groups.has(key)) {
+          groups.set(key, {
+            material,
+            unit,
+            totalQuantity: 0,
+            tourCodes: []
+          });
+        }
+
+        const group = groups.get(key);
+
+        group.totalQuantity += Number(tour.quantity || 0);
+        group.tourCodes.push(tour.tourCode || tour.tourNumber || tour.ID);
+      }
+
+      const groupRows = Array.from(groups.values()).map((group) => {
+        return `
+          <tr>
+            <td>${escapeHtml(group.material)}</td>
+            <td>${escapeHtml(group.tourCodes.join(' / '))}</td>
+            <td class="right">${group.totalQuantity.toFixed(3)}</td>
+            <td>${escapeHtml(group.unit)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const detailRows = assignments.map((assignment) => {
+        const tour = toursByID.get(assignment.tour_ID);
+
+        if (!tour) {
+          return '';
+        }
+
+        return `
+          <tr>
+            <td>${assignment.sequence || ''}</td>
+            <td>${escapeHtml(tour.tourCode || tour.tourNumber)}</td>
+            <td>${escapeHtml(tour.tourDate || tour.collectionDate)}</td>
+            <td>${escapeHtml(tour.zone)}</td>
+            <td>${escapeHtml(tour.collectionType)}</td>
+            <td class="right">${Number(tour.quantity || 0).toFixed(3)}</td>
+            <td>${escapeHtml(tour.unitOfMeasure || 'KG')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Feuille de route ${escapeHtml(roadmap.roadmapCode || roadmap.roadmapNumber)}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 32px;
+              color: #1d2d3e;
+            }
+
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #0a6ed1;
+              padding-bottom: 16px;
+              margin-bottom: 24px;
+            }
+
+            h1 {
+              margin: 0;
+              color: #0a6ed1;
+              font-size: 24px;
+            }
+
+            h2 {
+              margin-top: 28px;
+              color: #1d2d3e;
+              font-size: 18px;
+            }
+
+            .meta {
+              line-height: 1.8;
+              font-size: 14px;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 12px;
+              font-size: 13px;
+            }
+
+            th {
+              background: #eaf4ff;
+              color: #1d2d3e;
+              text-align: left;
+            }
+
+            th, td {
+              border: 1px solid #d0d7de;
+              padding: 8px;
+            }
+
+            .right {
+              text-align: right;
+            }
+
+            .actions {
+              margin-bottom: 20px;
+            }
+
+            .print {
+              background: #0a6ed1;
+              color: white;
+              border: none;
+              padding: 8px 14px;
+              border-radius: 8px;
+              font-weight: bold;
+              cursor: pointer;
+            }
+
+            @media print {
+              .actions {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="actions">
+            <button class="print" onclick="window.print()">Télécharger / Imprimer en PDF</button>
+          </div>
+
+          <div class="header">
+            <div>
+              <h1>Feuille de route</h1>
+              <div class="meta">
+                <strong>N° :</strong> ${escapeHtml(roadmap.roadmapCode || roadmap.roadmapNumber)}<br>
+                <strong>Client :</strong> ${escapeHtml(client?.name || '')}<br>
+                <strong>Période :</strong> ${escapeHtml(roadmap.month)}/${escapeHtml(roadmap.year)}
+              </div>
+            </div>
+            <div class="meta">
+              <strong>Statut :</strong> ${escapeHtml(roadmap.status)}<br>
+              <strong>Générée le :</strong> ${new Date().toLocaleDateString('fr-FR')}
+            </div>
+          </div>
+
+          <h2>Résumé par matériau / type de déchet</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Matériau / Type de déchet</th>
+                <th>Tournées regroupées</th>
+                <th>Quantité totale</th>
+                <th>Unité</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${groupRows}
+            </tbody>
+          </table>
+
+          <h2>Détail des tournées affectées</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Séquence</th>
+                <th>N° tournée</th>
+                <th>Date de collecte</th>
+                <th>Zone</th>
+                <th>Matériau / Type de déchet</th>
+                <th>Quantité</th>
+                <th>Unité</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${detailRows}
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+    });
+
 
     this.on('validateRoadmap', 'Roadmaps', async (req) => {
       const roadmapID = req.params?.[0]?.ID;
@@ -994,32 +1288,13 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
         return reject(req, 'Seules les roadmaps créées peuvent être validées.');
       }
 
-      const validationError = await validateRoadmapBusinessRules(req, roadmapID, {
-        Roadmaps,
-        RoadmapTours,
-        Tours
-      });
-
-      if (validationError) {
-        return validationError;
-      }
-
       await UPDATE(Roadmaps)
         .set({
           status: ROADMAP_STATUS.VALIDATED,
           rejectionReason: null,
-          integrationStatus: roadmap.integrationStatus || 'NOT_INTEGRATED',
           updatedAt: new Date().toISOString()
         })
         .where({ ID: roadmapID });
-
-      await INSERT.into(DecisionHistories).entries({
-        ID: cds.utils.uuid(),
-        decision: ROADMAP_STATUS.VALIDATED,
-        reason: null,
-        entityType: 'ROADMAP',
-        roadmap_ID: roadmapID
-      });
 
       return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
     });
@@ -1055,14 +1330,6 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
           updatedAt: new Date().toISOString()
         })
         .where({ ID: roadmapID });
-
-      await INSERT.into(DecisionHistories).entries({
-        ID: cds.utils.uuid(),
-        decision: ROADMAP_STATUS.REJECTED,
-        reason: trimmedReason,
-        entityType: 'ROADMAP',
-        roadmap_ID: roadmapID
-      });
 
       return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
     });
@@ -1286,251 +1553,7 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
       };
     });
 
-    this.on('getEligibleToursForRoadMap', async (req) => {
-      const { clientID, month, year } = req.data;
-
-      if (!clientID || !month || !year) {
-        return reject(req, 'Client, mois et année sont obligatoires.');
-      }
-
-      const eligible = await getEligibleToursForRoadMapInternal(clientID, month, year, {
-        Tours,
-        RoadmapTours,
-        Roadmaps
-      });
-
-      for (const tour of eligible) {
-        if (tour.client_ID) {
-          const client = await SELECT.one.from(Clients).where({ ID: tour.client_ID });
-          tour.clientName = client?.name || '';
-        }
-
-        if (tour.material_ID) {
-          const material = await SELECT.one.from(Materials).where({ ID: tour.material_ID });
-          tour.materialName = material?.description || '';
-        }
-      }
-
-      return eligible;
-    });
-
-    this.on('createRoadMapWithTours', async (req) => {
-      const {
-        clientID,
-        month,
-        year,
-        tourIDs,
-        humanResourceIDs,
-        materialResourceIDs
-      } = req.data;
-
-      if (!clientID || !month || !year) {
-        return reject(req, 'Client, mois et année sont obligatoires.');
-      }
-
-      if (!tourIDs || !tourIDs.length) {
-        return reject(req, 'Sélectionnez au moins une tournée.');
-      }
-
-      const client = await SELECT.one.from(Clients).where({ ID: clientID });
-
-      if (!client) {
-        return reject(req, 'Client introuvable.');
-      }
-
-      const eligible = await getEligibleToursForRoadMapInternal(clientID, month, year, {
-        Tours,
-        RoadmapTours,
-        Roadmaps
-      });
-      const eligibleIds = new Set(eligible.map((tour) => tour.ID));
-
-      for (const tourID of tourIDs) {
-        if (!eligibleIds.has(tourID)) {
-          return reject(req, 'Une ou plusieurs tournées sélectionnées ne sont pas éligibles.');
-        }
-      }
-
-      const { startDate, endDate } = monthRange(month, year);
-
-      return cds.tx(req, async () => {
-        const roadmapID = cds.utils.uuid();
-        const roadmapCode = await nextCode('Roadmaps', 'roadmapCode', 'RM');
-
-        await INSERT.into(Roadmaps).entries({
-          ID: roadmapID,
-          roadmapCode,
-          status: ROADMAP_STATUS.CREATED,
-          client_ID: clientID,
-          month,
-          year,
-          startDate,
-          endDate,
-          integrationStatus: 'NOT_INTEGRATED',
-          tour_ID: tourIDs[0]
-        });
-
-        let sequence = 1;
-
-        for (const tourID of tourIDs) {
-          await INSERT.into(RoadmapTours).entries({
-            ID: cds.utils.uuid(),
-            sequence: sequence++,
-            note: 'Tournée affectée',
-            roadmap_ID: roadmapID,
-            tour_ID: tourID
-          });
-
-          if ((humanResourceIDs && humanResourceIDs.length) || (materialResourceIDs && materialResourceIDs.length)) {
-            await replaceTourResources(
-              tourID,
-              humanResourceIDs,
-              materialResourceIDs,
-              { TourHumanResources, TourMaterialResources }
-            );
-          }
-        }
-
-        return SELECT.one.from(Roadmaps).where({ ID: roadmapID });
-      });
-    });
-
-    this.on('updateRoadMapAssignments', async (req) => {
-      const {
-        roadMapID,
-        tourID,
-        humanResourceIDs,
-        materialResourceIDs
-      } = req.data;
-
-      if (!roadMapID || !tourID) {
-        return reject(req, 'Roadmap et tournée sont obligatoires.');
-      }
-
-      const assignment = await SELECT.one.from(RoadmapTours).where({
-        roadmap_ID: roadMapID,
-        tour_ID: tourID
-      });
-
-      if (!assignment) {
-        return reject(req, 'Cette tournée n\'est pas affectée à la roadmap.');
-      }
-
-      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadMapID });
-
-      if (!roadmap || isValidatedRoadmapStatus(roadmap.status)) {
-        return reject(req, 'Les affectations ne peuvent être modifiées que sur une roadmap non validée.');
-      }
-
-      await replaceTourResources(
-        tourID,
-        humanResourceIDs,
-        materialResourceIDs,
-        { TourHumanResources, TourMaterialResources }
-      );
-
-      return SELECT.one.from(RoadmapTours).where({ ID: assignment.ID });
-    });
-
-    this.on('generateRoadMapDocumentData', async (req) => {
-      const { roadMapID } = req.data;
-
-      if (!roadMapID) {
-        return reject(req, 'Identifiant de roadmap manquant.');
-      }
-
-      const roadmap = await SELECT.one.from(Roadmaps).where({ ID: roadMapID });
-
-      if (!roadmap) {
-        return reject(req, 'Roadmap introuvable.');
-      }
-
-      const [client, assignments] = await Promise.all([
-        roadmap.client_ID ? SELECT.one.from(Clients).where({ ID: roadmap.client_ID }) : null,
-        SELECT.from(RoadmapTours).where({ roadmap_ID: roadMapID }).orderBy('sequence')
-      ]);
-
-      const tours = [];
-      const materialGroups = {};
-
-      for (const assignment of assignments) {
-        const tour = await SELECT.one.from(Tours).where({ ID: assignment.tour_ID });
-
-        if (!tour) {
-          continue;
-        }
-
-        const material = tour.material_ID
-          ? await SELECT.one.from(Materials).where({ ID: tour.material_ID })
-          : null;
-
-        const humanResources = await SELECT.from(TourHumanResources)
-          .where({ tour_ID: tour.ID })
-          .columns('humanResource_ID');
-        const materialResources = await SELECT.from(TourMaterialResources)
-          .where({ tour_ID: tour.ID })
-          .columns('materialResource_ID');
-
-        const humanLabels = [];
-
-        for (const entry of humanResources) {
-          const resource = entry.humanResource_ID
-            ? await SELECT.one.from(HumanResources).where({ ID: entry.humanResource_ID })
-            : null;
-
-          if (resource) {
-            humanLabels.push(resource.fullName);
-          }
-        }
-
-        const materialLabels = [];
-
-        for (const entry of materialResources) {
-          const resource = entry.materialResource_ID
-            ? await SELECT.one.from(MaterialResources).where({ ID: entry.materialResource_ID })
-            : null;
-
-          if (resource) {
-            materialLabels.push(resource.name);
-          }
-        }
-
-        const materialKey = material?.materialCode || material?.description || 'UNKNOWN';
-        const quantity = Number(tour.quantity || 0);
-
-        materialGroups[materialKey] = materialGroups[materialKey] || {
-          materialCode: material?.materialCode || '',
-          materialName: material?.description || '',
-          unitOfMeasure: tour.unitOfMeasure || material?.unitOfMeasure || '',
-          totalQuantity: 0
-        };
-        materialGroups[materialKey].totalQuantity += quantity;
-
-        tours.push({
-          tourCode: tour.tourCode,
-          tourDate: tour.tourDate,
-          clientName: client?.name || '',
-          materialName: material?.description || '',
-          quantity: tour.quantity,
-          unitOfMeasure: tour.unitOfMeasure,
-          humanResources: humanLabels.join(', '),
-          materialResources: materialLabels.join(', ')
-        });
-      }
-
-      return JSON.stringify({
-        logoUrl: 'https://www.sepur.com/wp-content/uploads/2025/01/logo-sepur-insertion-e1736954850722.png',
-        roadmapCode: roadmap.roadmapCode,
-        clientName: client?.name || '',
-        clientCode: client?.code || '',
-        month: roadmap.month,
-        year: roadmap.year,
-        status: normalizeRoadmapStatus(roadmap.status),
-        integrationStatus: roadmap.integrationStatus,
-        tours,
-        materialGroups: Object.values(materialGroups)
-      });
-    });
+    
 
     return super.init();
   }
