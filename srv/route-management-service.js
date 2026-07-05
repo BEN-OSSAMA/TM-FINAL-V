@@ -393,20 +393,29 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     /* ===================================================== */
     /* TOURS — BEFORE CREATE / UPDATE                        */
     /* ===================================================== */
-
-    this.before('CREATE', 'Tours', async (req) => {
+this.before('CREATE', 'Tours', async (req) => {
   syncTourPayload(req.data);
 
-  if (!req.data.tourCode) {
-    req.data.tourCode = await nextCode('Tours', 'tourCode', 'TOUR');
-  }
+  const generatedCode = await nextCode('Tours', 'tourCode', 'TOUR');
 
-  if (!req.data.tourNumber) {
-    req.data.tourNumber = req.data.tourCode;
-  }
+  req.data.tourCode = generatedCode;
+  req.data.tourNumber = generatedCode;
 
   if (!req.data.status) {
     req.data.status = TOUR_STATUS.CREATED;
+  }
+
+  if (req.data.material_ID) {
+    const material = await SELECT.one.from(cds.entities('route.management').Materials)
+      .where({ ID: req.data.material_ID });
+
+    if (material) {
+      req.data.collectionType = material.description || req.data.collectionType;
+
+      if (!req.data.unitOfMeasure) {
+        req.data.unitOfMeasure = material.unitOfMeasure || 'KG';
+      }
+    }
   }
 
   if (req.data.quantity !== undefined && req.data.quantity !== null) {
@@ -569,31 +578,51 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
     this.before('CREATE', 'Roadmaps', async (req) => {
   syncRoadmapPayload(req.data);
 
-  if (!req.data.roadmapNumber && !req.data.roadmapCode) {
-    const code = await nextCode('Roadmaps', 'roadmapNumber', 'RM');
-    req.data.roadmapNumber = code;
-    req.data.roadmapCode = code;
+  const code = await nextCode('Roadmaps', 'roadmapNumber', 'RM');
+
+  req.data.roadmapNumber = code;
+  req.data.roadmapCode = code;
+
+  req.data.status = ROADMAP_STATUS.CREATED;
+  req.data.integrationStatus = 'PENDING';
+
+  req.data.sapSalesOrder = null;
+  req.data.integrationDate = null;
+  req.data.integrationMessage = null;
+  req.data.rejectionReason = null;
+
+  if (req.data.startDate) {
+    const d = new Date(req.data.startDate);
+
+    if (!Number.isNaN(d.getTime())) {
+      req.data.month = d.getMonth() + 1;
+      req.data.year = d.getFullYear();
+
+      const range = monthRange(req.data.year, req.data.month);
+      req.data.startDate = range.startDate;
+      req.data.endDate = range.endDate;
+    }
   }
 
-  if (req.data.roadmapNumber && !req.data.roadmapCode) {
-    req.data.roadmapCode = req.data.roadmapNumber;
-  }
-
-  if (req.data.roadmapCode && !req.data.roadmapNumber) {
-    req.data.roadmapNumber = req.data.roadmapCode;
-  }
-
-  if (!req.data.status) {
-    req.data.status = ROADMAP_STATUS.CREATED;
-  }
-
-  if (!req.data.integrationStatus) {
-    req.data.integrationStatus = 'PENDING';
+  if (!req.data.month || !req.data.year) {
+    return reject(req, 'Veuillez sélectionner une date de période pour la feuille de route.');
   }
 });
 
     this.before('UPDATE', 'Roadmaps', async (req) => {
       syncRoadmapPayload(req.data);
+      if (req.data.startDate) {
+  const d = new Date(req.data.startDate);
+
+  if (!Number.isNaN(d.getTime())) {
+    req.data.month = d.getMonth() + 1;
+    req.data.year = d.getFullYear();
+
+    const range = monthRange(req.data.year, req.data.month);
+    req.data.startDate = range.startDate;
+    req.data.endDate = range.endDate;
+  }
+}
       const id = req.data.ID || req.params?.[0]?.ID;
 
       if (!id) {
@@ -1553,7 +1582,64 @@ module.exports = class RouteManagementService extends cds.ApplicationService {
       };
     });
 
-    
+        /* ===================================================== */
+    /* VALUE HELP — TOUR STATUS                              */
+    /* ===================================================== */
+
+    this.on('READ', 'TourStatusVH', () => {
+      return [
+        {
+          code: 'CREATED',
+          label: 'Créée'
+        },
+        {
+          code: 'VALIDATED',
+          label: 'Validée'
+        },
+        {
+          code: 'REJECTED',
+          label: 'Rejetée'
+        }
+      ];
+    });
+
+        /* ===================================================== */
+    /* VALUE HELP — ROADMAP STATUS                           */
+    /* ===================================================== */
+
+    this.on('READ', 'RoadmapStatusVH', () => {
+      return [
+        {
+          code: 'CREATED',
+          label: 'Créée'
+        },
+        {
+          code: 'VALIDATED',
+          label: 'Validée'
+        },
+        {
+          code: 'REJECTED',
+          label: 'Rejetée'
+        }
+      ];
+    });
+
+    /* ===================================================== */
+    /* VALUE HELP — INTEGRATION STATUS                       */
+    /* ===================================================== */
+
+    this.on('READ', 'IntegrationStatusVH', () => {
+      return [
+        {
+          code: 'PENDING',
+          label: 'En attente'
+        },
+        {
+          code: 'INTEGRATED',
+          label: 'Intégrée'
+        }
+      ];
+    });
 
     return super.init();
   }

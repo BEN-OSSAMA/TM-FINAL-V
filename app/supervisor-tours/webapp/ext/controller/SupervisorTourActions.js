@@ -51,11 +51,46 @@ sap.ui.define([
       : null;
   }
 
-  function refreshModel(oModel) {
+  // function refreshModel(oModel) {
+  //   if (oModel && typeof oModel.refresh === "function") {
+  //     oModel.refresh();
+  //   }
+  // }
+  async function refreshContext(oContext) {
+  if (!oContext) {
+    return;
+  }
+
+  if (typeof oContext.requestSideEffects === "function") {
+    await oContext.requestSideEffects([
+      { $PropertyPath: "status" },
+      { $PropertyPath: "statusCriticality" },
+      { $PropertyPath: "canValidate" },
+      { $PropertyPath: "canReject" },
+      { $PropertyPath: "rejectionReason" },
+      { $PropertyPath: "modifiedAt" },
+      { $PropertyPath: "updatedAt" }
+    ]);
+  }
+
+  var oModel = getModelFromContext(oContext);
+
+  if (oModel && typeof oModel.refresh === "function") {
+    oModel.refresh();
+  }
+}
+
+async function refreshAfterAction(oContext) {
+  try {
+    await refreshContext(oContext);
+  } catch (e) {
+    var oModel = getModelFromContext(oContext);
+
     if (oModel && typeof oModel.refresh === "function") {
       oModel.refresh();
     }
   }
+}
 
   async function executeBoundAction(oContext, sActionName, oParameters) {
     var oModel = getModelFromContext(oContext);
@@ -73,9 +108,9 @@ sap.ui.define([
       });
     }
 
-    await oAction.execute();
+  await oAction.execute();
 
-    refreshModel(oModel);
+await refreshAfterAction(oContext);
   }
 
   return {

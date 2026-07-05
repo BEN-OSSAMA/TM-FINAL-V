@@ -163,15 +163,16 @@
           }
         },
         "SupervisorToursObjectPage": {
-          "type": "Component",
-          "id": "SupervisorToursObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "contextPath": "/Tours",
-              "editableHeaderContent": false,
-              "showRelatedApps": false,
-              "sectionLayout": "Page",
+  "type": "Component",
+  "id": "SupervisorToursObjectPage",
+  "name": "sap.fe.templates.ObjectPage",
+  "options": {
+    "settings": {
+      "contextPath": "/Tours",
+      "editableHeaderContent": false,
+      "editMode": "Display",
+      "showRelatedApps": false,
+      "sectionLayout": "Page",
               "content": {
                 "header": {
                   "actions": {

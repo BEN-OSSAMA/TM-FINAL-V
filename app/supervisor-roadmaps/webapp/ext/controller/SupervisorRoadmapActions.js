@@ -119,11 +119,42 @@ sap.ui.define([
     }
   }
 
-  function reloadAfterSuccess() {
-    setTimeout(function () {
-      window.location.reload();
-    }, 500);
+  // function reloadAfterSuccess() {
+  //   setTimeout(function () {
+  //     window.location.reload();
+  //   }, 500);
+  // }
+  async function refreshContext(oContext) {
+  if (!oContext) {
+    return;
   }
+
+  if (typeof oContext.requestSideEffects === "function") {
+    await oContext.requestSideEffects([
+      { $PropertyPath: "status" },
+      { $PropertyPath: "statusCriticality" },
+      { $PropertyPath: "canValidate" },
+      { $PropertyPath: "canReject" },
+      { $PropertyPath: "rejectionReason" },
+      { $PropertyPath: "integrationStatus" },
+      { $PropertyPath: "modifiedAt" },
+      { $PropertyPath: "updatedAt" }
+    ]);
+  }
+
+  var oModel = oContext.getModel();
+
+  if (oModel && typeof oModel.refresh === "function") {
+    oModel.refresh();
+  }
+}
+
+async function refreshAllContexts(aContexts) {
+  for (var i = 0; i < aContexts.length; i += 1) {
+    await refreshContext(aContexts[i]);
+  }
+}
+
 
   return {
     onBackToDashboard: function () {
@@ -174,7 +205,7 @@ sap.ui.define([
             await executeForAll(aCreatedContexts, "validateRoadmap");
 
             MessageToast.show("Validation effectuée avec succès.");
-            reloadAfterSuccess();
+            await refreshAllContexts(aCreatedContexts);
           } catch (error) {
             MessageBox.error(error.message || "Erreur lors de la validation.");
           }
@@ -236,7 +267,7 @@ sap.ui.define([
 
               MessageToast.show("Rejet effectué avec succès.");
               oDialog.close();
-              reloadAfterSuccess();
+              await refreshAllContexts(aCreatedContexts);
             } catch (error) {
               MessageBox.error(error.message || "Erreur lors du rejet.");
             }

@@ -100,6 +100,27 @@ entity Materials : cuid, managed {
     unitOfMeasure : String(10);
 }
 
+entity Units {
+    key code : String(10);
+
+    @title: 'Libellé'
+    label : String(100);
+}
+
+entity Months {
+    key code : Integer;
+
+    @title: 'Mois'
+    name : String(30);
+}
+
+entity Years {
+    key value : Integer;
+
+    @title: 'Année'
+    label : String(20);
+}
+
 entity Categories : cuid, managed {
     @title: 'Nom de la catégorie'
     name : String(100);

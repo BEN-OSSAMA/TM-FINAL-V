@@ -1,0 +1,8 @@
+/* Couleur bleue du titre principal */
+.sapFDynamicPageTitle .sapMTitle,
+.sapFDynamicPageTitleMainHeading .sapMTitle,
+.sapFDynamicPageTitleMainHeading,
+.sapUxAPObjectPageHeaderIdentifier .sapMTitle,
+.sapUxAPObjectPageHeaderIdentifierTitle {
+    color: #0a6ed1 !important;
+}

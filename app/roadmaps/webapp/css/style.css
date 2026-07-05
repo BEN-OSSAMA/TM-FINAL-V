@@ -42,3 +42,12 @@ button[id*="GenerateRoadmapSheet"] .sapMBtnContent {
   color: #ffffff !important;
   font-weight: 700 !important;
 }
+
+
+/* Couleur bleue du titre principal */
+.sapFDynamicPageTitleMainHeading,
+.sapFDynamicPageTitleMainHeading .sapMTitle,
+.sapUxAPObjectPageHeaderIdentifierTitle,
+.sapUxAPObjectPageHeaderIdentifierTitle .sapMTitle {
+    color: #0a6ed1 !important;
+}

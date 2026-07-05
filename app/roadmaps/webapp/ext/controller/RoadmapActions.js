@@ -32,22 +32,34 @@ sap.ui.define([
   }
 
   async function executeBoundAction(oContext, sActionName) {
-    if (!oContext || typeof oContext.getModel !== "function") {
-      throw new Error("Roadmap introuvable.");
-    }
-
-    var oModel = oContext.getModel();
-    var sFullActionName = "RouteManagementService." + sActionName + "(...)";
-    var oAction = oModel.bindContext(sFullActionName, oContext);
-
-    await oAction.execute();
-
-    if (typeof oModel.refresh === "function") {
-      oModel.refresh();
-    }
-
-    return oAction.getBoundContext() ? oAction.getBoundContext().getObject() : null;
+  if (!oContext || typeof oContext.getModel !== "function") {
+    throw new Error("Roadmap introuvable.");
   }
+
+  var oModel = oContext.getModel();
+  var sFullActionName = "RouteManagementService." + sActionName + "(...)";
+  var oAction = oModel.bindContext(sFullActionName, oContext);
+
+  await oAction.execute();
+
+  if (typeof oContext.requestSideEffects === "function") {
+    await oContext.requestSideEffects([
+      { $PropertyPath: "roadmapCode" },
+      { $PropertyPath: "roadmapNumber" },
+      { $PropertyPath: "status" },
+      { $PropertyPath: "integrationStatus" },
+      { $PropertyPath: "startDate" },
+      { $PropertyPath: "endDate" },
+      { $NavigationPropertyPath: "assignedTours" }
+    ]);
+  }
+
+  if (typeof oModel.refresh === "function") {
+    oModel.refresh();
+  }
+
+  return oAction.getBoundContext() ? oAction.getBoundContext().getObject() : null;
+}
 
   return {
     onBackToDashboard: function () {
@@ -87,7 +99,19 @@ sap.ui.define([
 
             try {
               await executeBoundAction(oContext, "autoAssignTours");
-              MessageToast.show("Tournées affectées avec succès.");
+MessageToast.show("Tournées affectées avec succès.");
+
+setTimeout(function () {
+  if (oContext && typeof oContext.requestSideEffects === "function") {
+    oContext.requestSideEffects([
+      { $NavigationPropertyPath: "assignedTours" }
+    ]);
+  }
+
+  if (oContext && oContext.getModel && typeof oContext.getModel().refresh === "function") {
+    oContext.getModel().refresh();
+  }
+}, 300);
             } catch (error) {
               MessageBox.error(error.message || "Erreur lors de l’affectation des tournées.");
             }

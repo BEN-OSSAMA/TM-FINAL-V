@@ -76,3 +76,23 @@ button[id*="RetourBackObjectPage"]:hover .sapMBtnInner {
   background-color: #085caf !important;
   border-color: #085caf !important;
 }
+
+/* Masquer les actions standards Fiori Elements côté superviseur */
+[id*="StandardAction::Create"],
+[id*="StandardAction::Edit"],
+[id*="StandardAction::Delete"],
+[id*="fe::StandardAction::Create"],
+[id*="fe::StandardAction::Edit"],
+[id*="fe::StandardAction::Delete"],
+[id*="-Create"],
+[id*="-Edit"],
+[id*="-Delete"] {
+    display: none !important;
+}
+/* Couleur bleue du titre principal */
+.sapFDynamicPageTitleMainHeading,
+.sapFDynamicPageTitleMainHeading .sapMTitle,
+.sapUxAPObjectPageHeaderIdentifierTitle,
+.sapUxAPObjectPageHeaderIdentifierTitle .sapMTitle {
+    color: #0a6ed1 !important;
+}

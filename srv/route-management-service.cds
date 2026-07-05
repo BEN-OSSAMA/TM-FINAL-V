@@ -12,11 +12,46 @@ service RouteManagementService {
 
     entity Vehicles as projection on db.Vehicles;
 
-    entity Drivers as projection on db.Drivers;
+entity Drivers as projection on db.Drivers;
 
-    entity CollectionPoints as projection on db.CollectionPoints;
+entity HumanResources as projection on db.HumanResources;
 
-    entity TourCollectionPoints as projection on db.TourCollectionPoints;
+entity MaterialResources as projection on db.MaterialResources;
+
+entity CollectionPoints as projection on db.CollectionPoints;
+
+entity TourCollectionPoints as projection on db.TourCollectionPoints;
+
+entity TourHumanResources as projection on db.TourHumanResources;
+
+entity TourMaterialResources as projection on db.TourMaterialResources;
+
+entity Materials as projection on db.Materials;
+
+    entity Units as projection on db.Units;
+
+entity Months as projection on db.Months;
+
+entity Years as projection on db.Years;
+    @readonly
+    @cds.persistence.skip
+    entity TourStatusVH {
+        key code : String(20);
+        label    : String(50);
+    }
+@readonly
+@cds.persistence.skip
+entity RoadmapStatusVH {
+    key code : String(20);
+    label    : String(50);
+}
+
+@readonly
+@cds.persistence.skip
+entity IntegrationStatusVH {
+    key code : String(20);
+    label    : String(50);
+}
 
     @odata.draft.enabled
     @cds.redirection.target: true
@@ -200,6 +235,25 @@ service RouteManagementService {
 /* ===================================================== */
 
 annotate RouteManagementService.Tours with {
+    tourCode @Core.Computed;
+    tourNumber @Core.Computed;
+    status @Core.Computed;
+    rejectionReason @Core.Computed;
+    status @Common.ValueList : {
+        CollectionPath : 'TourStatusVH',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : status,
+                ValueListProperty : 'code'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'label'
+            }
+        ]
+    };
+
     client @Common.ValueList : {
         CollectionPath : 'Clients',
         Parameters : [
@@ -210,7 +264,7 @@ annotate RouteManagementService.Tours with {
             },
             {
                 $Type : 'Common.ValueListParameterDisplayOnly',
-                ValueListProperty : 'code'
+                ValueListProperty : 'customerCode'
             },
             {
                 $Type : 'Common.ValueListParameterDisplayOnly',
@@ -222,6 +276,67 @@ annotate RouteManagementService.Tours with {
             }
         ]
     };
+
+    collectionType @Common.ValueList : {
+        CollectionPath : 'Materials',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : collectionType,
+                ValueListProperty : 'description'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'materialCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'unitOfMeasure'
+            }
+        ]
+    };
+
+    collectionType @Common.ValueListWithFixedValues : true;
+
+    material @Common.ValueList : {
+        CollectionPath : 'Materials',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : material_ID,
+                ValueListProperty : 'ID'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'materialCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'description'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'unitOfMeasure'
+            }
+        ]
+    };
+
+    unitOfMeasure @Common.ValueList : {
+        CollectionPath : 'Units',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : unitOfMeasure,
+                ValueListProperty : 'code'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'label'
+            }
+        ]
+    };
+
+    unitOfMeasure @Common.ValueListWithFixedValues : true;
 
     vehicle @Common.ValueList : {
         CollectionPath : 'Vehicles',
@@ -265,31 +380,6 @@ annotate RouteManagementService.Tours with {
             {
                 $Type : 'Common.ValueListParameterDisplayOnly',
                 ValueListProperty : 'phone'
-            }
-        ]
-    };
-};
-
-annotate RouteManagementService.Roadmaps with {
-    tour @Common.ValueList : {
-        CollectionPath : 'Tours',
-        Parameters : [
-            {
-                $Type : 'Common.ValueListParameterInOut',
-                LocalDataProperty : tour_ID,
-                ValueListProperty : 'ID'
-            },
-            {
-                $Type : 'Common.ValueListParameterDisplayOnly',
-                ValueListProperty : 'tourCode'
-            },
-            {
-                $Type : 'Common.ValueListParameterDisplayOnly',
-                ValueListProperty : 'tourDate'
-            },
-            {
-                $Type : 'Common.ValueListParameterDisplayOnly',
-                ValueListProperty : 'zone'
             }
         ]
     };
@@ -432,81 +522,101 @@ annotate RouteManagementService.Tours with @(
     ],
 
     UI.Facets : [
-        {
-            $Type  : 'UI.ReferenceFacet',
-            Label  : 'Informations générales',
-            Target : '@UI.FieldGroup#General'
-        },
-        {
-            $Type  : 'UI.ReferenceFacet',
-            Label  : 'Ressources',
-            Target : '@UI.FieldGroup#Resources'
-        },
-        {
-            $Type  : 'UI.ReferenceFacet',
-            Label  : 'Suivi',
-            Target : '@UI.FieldGroup#Tracking'
-        }
-    ],
+    {
+        $Type  : 'UI.ReferenceFacet',
+        Label  : 'Informations générales',
+        Target : '@UI.FieldGroup#General'
+    },
+    // {
+    //     $Type  : 'UI.ReferenceFacet',
+    //     Label  : 'Ressources',
+    //     Target : '@UI.FieldGroup#Resources'
+    // },
+    {
+        $Type  : 'UI.ReferenceFacet',
+        Label  : 'Ressources humaines affectées',
+        Target : 'humanResources/@UI.LineItem'
+    },
+    {
+        $Type  : 'UI.ReferenceFacet',
+        Label  : 'Ressources matérielles affectées',
+        Target : 'materialResources/@UI.LineItem'
+    },
+    {
+        $Type  : 'UI.ReferenceFacet',
+        Label  : 'Suivi',
+        Target : '@UI.FieldGroup#Tracking'
+    }
+],
 
     UI.FieldGroup #General : {
-        Data : [
-            {
-                $Type : 'UI.DataField',
-                Label : 'Code tournée',
-                Value : tourCode
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Date',
-                Value : tourDate
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Zone',
-                Value : zone
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Type de collecte',
-                Value : collectionType
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Client',
-                Value : client_ID
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Description',
-                Value : description
-            }
-        ]
-    },
+    Data : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'N° tournée',
+            Value : tourCode
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Zone de collecte',
+            Value : zone
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Quantité à collecter',
+            Value : quantity
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Client',
+            Value : client_ID
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Date de collecte',
+            Value : tourDate
+        },
+        {
+    $Type : 'UI.DataField',
+    Label : 'Matériau / Type de déchet',
+    Value : collectionType
+},
+        {
+            $Type : 'UI.DataField',
+            Label : 'Unité',
+            Value : unitOfMeasure
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Remarques',
+            Value : description
+        }
+    ]
+},
 
-    UI.FieldGroup #Resources : {
-        Data : [
-            {
-                $Type : 'UI.DataField',
-                Label : 'Véhicule',
-                Value : vehicle_ID
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Chauffeur',
-                Value : driver_ID
-            }
-        ]
-    },
+    // UI.FieldGroup #Resources : {
+    //     Data : [
+    //         {
+    //             $Type : 'UI.DataField',
+    //             Label : 'Véhicule',
+    //             Value : vehicle_ID
+    //         },
+    //         {
+    //             $Type : 'UI.DataField',
+    //             Label : 'Chauffeur',
+    //             Value : driver_ID
+    //         }
+    //     ]
+    // },
 
     UI.FieldGroup #Tracking : {
         Data : [
             {
                 $Type : 'UI.DataField',
                 Label : 'Statut',
-                Value : status,
-                Criticality : statusCriticality,
-                CriticalityRepresentation : #WithIcon
+                Value : status
+                // Criticality : statusCriticality,
+                // CriticalityRepresentation : #WithIcon
             },
             {
                 $Type : 'UI.DataField',
@@ -532,6 +642,49 @@ annotate RouteManagementService.Tours with @(
 /* ===================================================== */
 
 annotate RouteManagementService.Roadmaps with {
+    roadmapCode @Core.Computed;
+    roadmapNumber @Core.Computed;
+    status @Core.Computed;
+    integrationStatus @Core.Computed;
+    sapSalesOrder @Core.Computed;
+    rejectionReason @Core.Computed;
+
+    roadmapCode @title : 'N° feuille de route';
+    startDate   @title : 'Date';
+
+        status @Common.ValueList : {
+        CollectionPath : 'RoadmapStatusVH',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : status,
+                ValueListProperty : 'code'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'label'
+            }
+        ]
+    };
+
+    status @Common.ValueListWithFixedValues : true;
+
+    integrationStatus @Common.ValueList : {
+        CollectionPath : 'IntegrationStatusVH',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : integrationStatus,
+                ValueListProperty : 'code'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'label'
+            }
+        ]
+    };
+
+    integrationStatus @Common.ValueListWithFixedValues : true;
 
     client @Common.ValueList : {
         CollectionPath : 'Clients',
@@ -555,6 +708,40 @@ annotate RouteManagementService.Roadmaps with {
             }
         ]
     };
+
+    month @Common.ValueList : {
+        CollectionPath : 'Months',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : month,
+                ValueListProperty : 'code'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'name'
+            }
+        ]
+    };
+
+    month @Common.ValueListWithFixedValues : true;
+
+    year @Common.ValueList : {
+        CollectionPath : 'Years',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : year,
+                ValueListProperty : 'value'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'label'
+            }
+        ]
+    };
+
+    year @Common.ValueListWithFixedValues : true;
 };
 
 annotate RouteManagementService.Roadmaps with @(
@@ -570,13 +757,12 @@ annotate RouteManagementService.Roadmaps with @(
     },
 
     UI.SelectionFields : [
-        roadmapCode,
-        client_ID,
-        month,
-        year,
-        status,
-        integrationStatus
-    ],
+    roadmapCode,
+    client_ID,
+    startDate,
+    status,
+    integrationStatus
+],
 
     UI.LineItem : [
         {
@@ -592,15 +778,16 @@ annotate RouteManagementService.Roadmaps with @(
             ![@UI.Importance] : #High
         },
         {
-            $Type : 'UI.DataField',
-            Label : 'Mois',
-            Value : month
-        },
-        {
-            $Type : 'UI.DataField',
-            Label : 'Année',
-            Value : year
-        },
+    $Type : 'UI.DataField',
+    Label : 'Date / période',
+    Value : startDate
+    
+},
+{
+    $Type : 'UI.DataField',
+    Label : 'Date / période',
+    Value : Date
+},
         {
             $Type : 'UI.DataField',
             Label : 'Statut',
@@ -647,15 +834,10 @@ annotate RouteManagementService.Roadmaps with @(
                 Value : client_ID
             },
             {
-                $Type : 'UI.DataField',
-                Label : 'Mois',
-                Value : month
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'Année',
-                Value : year
-            }
+            $Type : 'UI.DataField',
+            Label : 'Date de période',
+            Value : startDate
+        }
         ]
     },
 
@@ -717,6 +899,188 @@ annotate RouteManagementService.RoadmapTours with @(
         {
             $Type : 'UI.DataField',
             Label : 'Remarque',
+            Value : note
+        }
+    ]
+);
+annotate RouteManagementService.RoadmapTours with {
+    tour @Common.ValueList : {
+        CollectionPath : 'Tours',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : tour_ID,
+                ValueListProperty : 'ID'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'tourCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'tourDate'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'collectionType'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'clientName'
+            }
+        ]
+    };
+};
+/* ===================================================== */
+/* TOUR HUMAN RESOURCES ANNOTATIONS                      */
+/* ===================================================== */
+
+annotate RouteManagementService.TourHumanResources with {
+    humanResource @Common.ValueList : {
+        CollectionPath : 'HumanResources',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : humanResource,
+                ValueListProperty : 'ID'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'employeeCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'fullName'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'status'
+            }
+        ]
+    };
+};
+
+annotate RouteManagementService.TourHumanResources with @(
+    UI.LineItem : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'Séquence',
+            Value : sequence
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Ressource humaine',
+            Value : humanResource
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Rôle',
+            Value : role
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Note',
+            Value : note
+        }
+    ],
+
+    UI.Identification : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'Séquence',
+            Value : sequence
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Ressource humaine',
+            Value : humanResource
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Rôle',
+            Value : role
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Note',
+            Value : note
+        }
+    ]
+);
+
+
+/* ===================================================== */
+/* TOUR MATERIAL RESOURCES ANNOTATIONS                   */
+/* ===================================================== */
+
+annotate RouteManagementService.TourMaterialResources with {
+    materialResource @Common.ValueList : {
+        CollectionPath : 'MaterialResources',
+        Parameters : [
+            {
+                $Type : 'Common.ValueListParameterInOut',
+                LocalDataProperty : materialResource,
+                ValueListProperty : 'ID'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'equipmentCode'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'name'
+            },
+            {
+                $Type : 'Common.ValueListParameterDisplayOnly',
+                ValueListProperty : 'status'
+            }
+        ]
+    };
+};
+
+annotate RouteManagementService.TourMaterialResources with @(
+    UI.LineItem : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'Séquence',
+            Value : sequence
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Ressource matérielle',
+            Value : materialResource
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Usage',
+            Value : usage
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Note',
+            Value : note
+        }
+    ],
+
+    UI.Identification : [
+        {
+            $Type : 'UI.DataField',
+            Label : 'Séquence',
+            Value : sequence
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Ressource matérielle',
+            Value : materialResource
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Usage',
+            Value : usage
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : 'Note',
             Value : note
         }
     ]

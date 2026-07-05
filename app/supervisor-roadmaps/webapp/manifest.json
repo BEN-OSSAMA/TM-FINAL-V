@@ -163,15 +163,16 @@
           }
         },
         "SupervisorRoadmapsObjectPage": {
-          "type": "Component",
-          "id": "SupervisorRoadmapsObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "contextPath": "/Roadmaps",
-              "editableHeaderContent": false,
-              "showRelatedApps": false,
-              "sectionLayout": "Page",
+  "type": "Component",
+  "id": "SupervisorRoadmapsObjectPage",
+  "name": "sap.fe.templates.ObjectPage",
+  "options": {
+    "settings": {
+      "contextPath": "/Roadmaps",
+      "editableHeaderContent": false,
+      "editMode": "Display",
+      "showRelatedApps": false,
+      "sectionLayout": "Page",
               "content": {
                 "header": {
                   "actions": {
