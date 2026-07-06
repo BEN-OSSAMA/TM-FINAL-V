@@ -93,3 +93,11 @@ button[id*="BackObjectPage"]:hover .sapMBtnInner {
 .sapUxAPObjectPageHeaderIdentifierTitle .sapMTitle {
     color: #0a6ed1 !important;
 }
+
+/* Masquer le filtre standard "Editing Status" dans la barre de filtres */
+[id*="EditingStatus"],
+[id*="DraftAdministrativeData"],
+.sapUiCompFilterBar [title="Editing Status"],
+.sapUiCompFilterBar label:has(+ * [id*="EditingStatus"]) {
+    display: none !important;
+}
